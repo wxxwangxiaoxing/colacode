@@ -13,9 +13,19 @@ import com.colacode.interview.application.dto.InterviewResultDTO;
 import com.colacode.interview.application.dto.KeywordDTO;
 import com.colacode.interview.application.dto.StartInterviewReqDTO;
 import com.colacode.interview.application.dto.SubmitInterviewReqDTO;
+import com.colacode.interview.application.dto.session.InterviewSessionQuestionDTO;
+import com.colacode.interview.application.dto.session.InterviewSessionReportDTO;
+import com.colacode.interview.application.dto.session.InterviewSessionStatusDTO;
+import com.colacode.interview.application.dto.session.NextQuestionRespDTO;
+import com.colacode.interview.application.dto.session.SessionActionReqDTO;
+import com.colacode.interview.application.dto.session.StartInterviewSessionReqDTO;
+import com.colacode.interview.application.dto.session.StartInterviewSessionRespDTO;
+import com.colacode.interview.application.dto.session.SubmitAnswerReqDTO;
+import com.colacode.interview.application.dto.session.SubmitAnswerRespDTO;
 import com.colacode.interview.domain.bo.InterviewQuestionBO;
 import com.colacode.interview.domain.bo.InterviewResultBO;
 import com.colacode.interview.domain.bo.KeywordBO;
+import com.colacode.interview.domain.manager.InterviewFlowManager;
 import com.colacode.interview.domain.service.InterviewDomainService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -33,9 +43,12 @@ import java.util.Map;
 public class InterviewController {
 
     private final InterviewDomainService interviewDomainService;
+    private final InterviewFlowManager interviewFlowManager;
 
-    public InterviewController(InterviewDomainService interviewDomainService) {
+    public InterviewController(InterviewDomainService interviewDomainService,
+                               InterviewFlowManager interviewFlowManager) {
         this.interviewDomainService = interviewDomainService;
+        this.interviewFlowManager = interviewFlowManager;
     }
 
     @PostMapping("/analyse")
@@ -55,6 +68,47 @@ public class InterviewController {
         }).collect(java.util.stream.Collectors.toList());
         List<InterviewQuestionBO> questions = interviewDomainService.startInterview(reqDTO.getEngineType(), keywords);
         return Result.success(InterviewDTOConverter.INSTANCE.toQuestionDTOList(questions));
+    }
+
+    @PostMapping("/session/start")
+    public Result<StartInterviewSessionRespDTO> startSession(@RequestBody StartInterviewSessionReqDTO reqDTO) {
+        Long userId = LoginUserContext.getLoginUserIdOrDefault(reqDTO.getUserId());
+        return Result.success(interviewFlowManager.startSession(userId, reqDTO));
+    }
+
+    @GetMapping("/session/detail")
+    public Result<InterviewSessionStatusDTO> sessionDetail(@RequestParam Long sessionId) {
+        return Result.success(interviewFlowManager.getSessionStatus(sessionId));
+    }
+
+    @PostMapping("/session/interrupt")
+    public Result<InterviewSessionStatusDTO> interrupt(@RequestBody SessionActionReqDTO reqDTO) {
+        return Result.success(interviewFlowManager.interruptSession(reqDTO.getSessionId()));
+    }
+
+    @PostMapping("/session/resume")
+    public Result<InterviewSessionStatusDTO> resume(@RequestBody SessionActionReqDTO reqDTO) {
+        return Result.success(interviewFlowManager.resumeSession(reqDTO.getSessionId()));
+    }
+
+    @PostMapping("/answer/submit")
+    public Result<SubmitAnswerRespDTO> submitAnswer(@RequestBody SubmitAnswerReqDTO reqDTO) {
+        return Result.success(interviewFlowManager.submitAnswer(reqDTO));
+    }
+
+    @GetMapping("/question/result")
+    public Result<InterviewSessionQuestionDTO> questionResult(@RequestParam Long recordId) {
+        return Result.success(interviewFlowManager.getQuestionResult(recordId));
+    }
+
+    @GetMapping("/next-question")
+    public Result<NextQuestionRespDTO> nextQuestion(@RequestParam Long sessionId) {
+        return Result.success(interviewFlowManager.nextQuestion(sessionId));
+    }
+
+    @GetMapping("/report")
+    public Result<InterviewSessionReportDTO> report(@RequestParam Long sessionId) {
+        return Result.success(interviewFlowManager.getReport(sessionId));
     }
 
     @PostMapping("/submit")
@@ -101,14 +155,14 @@ public class InterviewController {
     }
 
     private Long saveHistory(SubmitInterviewReqDTO reqDTO, InterviewResultBO result, String keyWords, Long userId) {
-        interviewDomainService.saveInterviewHistory(
+        return interviewDomainService.saveInterviewHistory(
                 reqDTO.getInterviewUrl(),
                 keyWords,
                 result.getAvgScore(),
                 result.getAvgTips(),
-                userId
+                userId,
+                result.getTips() == null ? List.of() : result.getTips()
         );
-        return 0L;
     }
 
     private List<InterviewHistoryDTO> toHistoryDTOList(List<Map<String, Object>> historyList) {

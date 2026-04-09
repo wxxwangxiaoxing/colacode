@@ -39,30 +39,26 @@ public class InterviewDomainService {
     }
 
     public List<KeywordBO> analyse(String engineType, List<String> labels) {
-        InterviewEngine engine = engineMap.get(engineType);
-        if (engine == null) {
-            throw new IllegalArgumentException("不支持的面试引擎: " + engineType);
-        }
+        InterviewEngine engine = getEngine(engineType);
         return engine.analyse(labels);
     }
 
     public List<InterviewQuestionBO> startInterview(String engineType, List<KeywordBO> selectedKeywords) {
-        InterviewEngine engine = engineMap.get(engineType);
-        if (engine == null) {
-            throw new IllegalArgumentException("不支持的面试引擎: " + engineType);
-        }
+        InterviewEngine engine = getEngine(engineType);
         return engine.start(selectedKeywords);
     }
 
     public InterviewResultBO submitAnswers(String engineType, List<InterviewQuestionBO> questions) {
-        InterviewEngine engine = engineMap.get(engineType);
-        if (engine == null) {
-            throw new IllegalArgumentException("不支持的面试引擎: " + engineType);
-        }
+        InterviewEngine engine = getEngine(engineType);
         return engine.submit(questions);
     }
 
-    public void saveInterviewHistory(String interviewUrl, String keyWords, Double avgScore, String tip, Long userId) {
+    public Long saveInterviewHistory(String interviewUrl,
+                                     String keyWords,
+                                     Double avgScore,
+                                     String tip,
+                                     Long userId,
+                                     List<String> detailTips) {
         InterviewHistory history = new InterviewHistory();
         history.setInterviewUrl(interviewUrl);
         history.setKeyWords(keyWords);
@@ -70,7 +66,20 @@ public class InterviewDomainService {
         history.setTip(tip);
         history.setCreatedBy(String.valueOf(userId));
         interviewHistoryMapper.insert(history);
+        if (detailTips != null && !detailTips.isEmpty()) {
+            for (String detailTip : detailTips) {
+                InterviewQuestionHistory questionHistory = new InterviewQuestionHistory();
+                questionHistory.setInterviewId(history.getId());
+                questionHistory.setKeyWords(keyWords);
+                questionHistory.setQuestion(detailTip);
+                questionHistory.setAnswer(detailTip);
+                questionHistory.setScore(avgScore);
+                questionHistory.setCreatedBy(String.valueOf(userId));
+                interviewQuestionHistoryMapper.insert(questionHistory);
+            }
+        }
         log.info("保存面试记录成功, id: {}", history.getId());
+        return history.getId();
     }
 
     public void saveQuestionHistory(Long interviewId, List<InterviewQuestionBO> questions, Long userId) {
@@ -126,5 +135,13 @@ public class InterviewDomainService {
             result.add(map);
         }
         return result;
+    }
+
+    private InterviewEngine getEngine(String engineType) {
+        InterviewEngine engine = engineMap.get(engineType);
+        if (engine == null) {
+            throw new IllegalArgumentException("不支持的面试引擎: " + engineType);
+        }
+        return engine;
     }
 }

@@ -1,0 +1,2 @@
+com.colacode.common.autoconfigure.CommonWebAutoConfiguration
+com.colacode.common.autoconfigure.CommonFeignAutoConfiguration

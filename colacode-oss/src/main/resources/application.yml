@@ -1,0 +1,36 @@
+server:
+  port: 4000
+
+spring:
+  application:
+    name: colacode-oss
+  data:
+    redis:
+      host: 117.72.14.166
+      port: 6379
+      password: colacode1234
+      database: 1
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+
+sa-token:
+  token-name: satoken
+  timeout: 2592000
+  active-timeout: -1
+  is-concurrent: true
+  is-share: true
+  token-style: uuid
+  is-log: false
+
+storage:
+  type: local
+  local:
+    path: ./uploads/
+    access-url: http://localhost:4000/oss/download/
+  minio:
+    endpoint: http://117.72.14.166:9000
+    access-key: minioadmin
+    secret-key: minioadmin
+    bucket-name: colacode

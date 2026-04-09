@@ -1,0 +1,142 @@
+server:
+  port: ${BOOT3_SERVER_PORT:5000}
+
+spring:
+  application:
+    name: colacode-gateway-boot3
+  cloud:
+    nacos:
+      config:
+        import-check:
+          enabled: false
+      discovery:
+        enabled: false
+    compatibility-verifier:
+      enabled: false
+    sentinel:
+      transport:
+        dashboard: ${BOOT3_SENTINEL_DASHBOARD:127.0.0.1:8080}
+        port: ${BOOT3_SENTINEL_PORT:8720}
+      eager: true
+      scg:
+        fallback:
+          mode: response
+          response-status: 429
+          response-body: '{"code":429,"message":"请求太频繁，请稍后再试"}'
+  main:
+    web-application-type: reactive
+  data:
+    redis:
+      host: ${BOOT3_REDIS_HOST:127.0.0.1}
+      port: ${BOOT3_REDIS_PORT:6379}
+      password: ${BOOT3_REDIS_PASSWORD:}
+      database: ${BOOT3_REDIS_DATABASE:0}
+      timeout: 5s
+
+gateway:
+  routes:
+    auth: ${BOOT3_AUTH_ROUTE:http://127.0.0.1:3111}
+    subject: ${BOOT3_SUBJECT_ROUTE:http://127.0.0.1:3110}
+    practice: ${BOOT3_PRACTICE_ROUTE:http://127.0.0.1:3113}
+    circle: ${BOOT3_CIRCLE_ROUTE:http://127.0.0.1:3114}
+    interview: ${BOOT3_INTERVIEW_ROUTE:http://127.0.0.1:3016}
+    oss: ${BOOT3_OSS_ROUTE:http://127.0.0.1:4100}
+    wx: ${BOOT3_WX_ROUTE:http://127.0.0.1:3112}
+
+sa-token:
+  token-name: satoken
+  timeout: 2592000
+  active-timeout: -1
+  is-concurrent: true
+  is-share: true
+  token-style: uuid
+  is-log: true
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    disable-swagger-default-url: true
+    urls:
+      - name: auth
+        url: /auth/v3/api-docs
+      - name: subject
+        url: /subject/v3/api-docs
+      - name: practice
+        url: /practice/v3/api-docs
+      - name: circle
+        url: /circle/v3/api-docs
+      - name: interview
+        url: /interview/v3/api-docs
+      - name: oss
+        url: /oss/v3/api-docs
+
+colacode:
+  gateway:
+    auth:
+      login-header-name: loginId
+      exclude-paths:
+        - /auth/user/login
+        - /auth/user/register
+        - /auth/user/isLogin
+        - /wx/**
+        - /oss/upload
+        - /oss/download/**
+        - /oss/delete/**
+        - /oss/adapters
+        - /oss/switch
+        - /circle/sensitive/list
+        - /subject/info/page
+        - /subject/info/query
+        - /subject/info/contribute
+        - /subject/search/query
+        - /subject/category/queryTree
+        - /subject/category/queryPrimaryCategory
+        - /subject/category/queryCategoryByPrimary
+        - /subject/category/queryCategoryAndLabel
+        - /subject/label/queryByCategoryId
+        - /practice/preSet/list
+        - /practice/rankList
+        - /interview/history
+        - /interview/detail
+        - /actuator/**
+        - /druid/**
+        - /swagger-ui.html
+        - /swagger-ui/**
+        - /v3/api-docs/**
+    rate-limit:
+      enabled: true
+      route-rules:
+        - resource: colacode-auth
+          count: 50
+          interval-sec: 1
+        - resource: colacode-subject
+          count: 100
+          interval-sec: 1
+        - resource: colacode-practice
+          count: 80
+          interval-sec: 1
+        - resource: colacode-circle
+          count: 80
+          interval-sec: 1
+        - resource: colacode-interview
+          count: 40
+          interval-sec: 1
+        - resource: colacode-oss
+          count: 30
+          interval-sec: 1
+        - resource: colacode-wx
+          count: 20
+          interval-sec: 1
+      api-rules:
+        - resource: auth-login-api
+          pattern: /auth/user/login
+          count: 5
+          interval-sec: 1
+        - resource: auth-register-api
+          pattern: /auth/user/register
+          count: 2
+          interval-sec: 1
+        - resource: oss-upload-api
+          pattern: /oss/upload
+          count: 10
+          interval-sec: 1

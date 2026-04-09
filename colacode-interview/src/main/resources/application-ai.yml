@@ -1,0 +1,14 @@
+interview:
+  ai:
+    enabled: true
+    service-name: external-ai-service
+    base-url: http://your-ai-host:3020
+
+spring:
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            connectTimeout: 3000
+            readTimeout: 10000

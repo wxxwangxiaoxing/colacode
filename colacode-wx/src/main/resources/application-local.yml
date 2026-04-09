@@ -1,0 +1,26 @@
+server:
+  port: ${BOOT3_SERVER_PORT:3112}
+
+spring:
+  application:
+    name: colacode-wx-boot3
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+  data:
+    redis:
+      host: ${BOOT3_REDIS_HOST:127.0.0.1}
+      port: ${BOOT3_REDIS_PORT:6379}
+      password: ${BOOT3_REDIS_PASSWORD:}
+      database: ${BOOT3_REDIS_DATABASE:1}
+      timeout: 5s
+  cloud:
+    compatibility-verifier:
+      enabled: false
+
+wx:
+  mp:
+    app-id: ${BOOT3_WX_APP_ID:your-app-id}
+    secret: ${BOOT3_WX_SECRET:your-secret}
+    token: ${BOOT3_WX_TOKEN:colacode}
+    aes-key: ${BOOT3_WX_AES_KEY:your-aes-key}

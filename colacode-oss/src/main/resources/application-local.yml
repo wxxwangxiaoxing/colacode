@@ -1,0 +1,43 @@
+server:
+  port: ${BOOT3_SERVER_PORT:4100}
+
+spring:
+  application:
+    name: colacode-oss-boot3
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+  data:
+    redis:
+      host: ${BOOT3_REDIS_HOST:127.0.0.1}
+      port: ${BOOT3_REDIS_PORT:6379}
+      password: ${BOOT3_REDIS_PASSWORD:}
+      database: ${BOOT3_REDIS_DATABASE:1}
+      timeout: 5s
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+  cloud:
+    compatibility-verifier:
+      enabled: false
+
+sa-token:
+  token-name: satoken
+  timeout: 2592000
+  active-timeout: -1
+  is-concurrent: true
+  is-share: true
+  token-style: uuid
+  is-log: true
+
+storage:
+  type: ${BOOT3_STORAGE_TYPE:local}
+  local:
+    path: ${BOOT3_STORAGE_LOCAL_PATH:./uploads/}
+    access-url: ${BOOT3_STORAGE_LOCAL_ACCESS_URL:http://localhost:4100/oss/download/}
+  minio:
+    endpoint: ${BOOT3_MINIO_ENDPOINT:http://127.0.0.1:9000}
+    access-key: ${BOOT3_MINIO_ACCESS_KEY:minioadmin}
+    secret-key: ${BOOT3_MINIO_SECRET_KEY:minioadmin}
+    bucket-name: ${BOOT3_MINIO_BUCKET:colacode}

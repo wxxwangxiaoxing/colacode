@@ -1,0 +1,25 @@
+# 服务特定配置（数据源、Redis、Sa-Token 已从 Nacos 共享配置加载）
+server:
+  port: 3010
+
+spring:
+  application:
+    name: colacode-subject
+  autoconfigure:
+    exclude:
+      - org.apache.rocketmq.spring.autoconfigure.RocketMQAutoConfiguration
+
+elasticsearch:
+  host: 127.0.0.1
+  port: 9200
+
+xxl:
+  job:
+    admin:
+      addresses: http://127.0.0.1:8080/xxl-job-admin
+    accessToken: ''
+    executor:
+      appname: colacode-subject
+      port: 9999
+      logpath: ./logs/xxl-job
+      logretentiondays: 30

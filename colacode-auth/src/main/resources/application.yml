@@ -1,0 +1,24 @@
+# 服务特定配置（数据源、Redis、Sa-Token 已从 Nacos 共享配置加载）
+server:
+  port: 3011
+
+spring:
+  application:
+    name: colacode-auth
+
+colacode:
+  auth:
+    admin:
+      role-keys:
+        - admin
+      permission-keys:
+        - auth:manage
+        - user:manage
+        - role:manage
+        - permission:manage
+    login-security:
+      max-attempts-per-minute: 10
+      max-failures: 5
+      attempt-window-seconds: 60
+      failure-window-seconds: 900
+      lock-seconds: 900

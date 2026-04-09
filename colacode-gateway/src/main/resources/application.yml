@@ -1,0 +1,166 @@
+server:
+  port: 5000
+
+spring:
+  application:
+    name: colacode-gateway
+  cloud:
+    sentinel:
+      transport:
+        dashboard: 127.0.0.1:8080
+        port: 8720
+      eager: true
+      scg:
+        fallback:
+          mode: response
+          response-status: 429
+          response-body: '{"code": 429, "message": "请求太频繁，请稍后再试"}'
+    gateway:
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin
+
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      password:
+      database: 1
+
+sa-token:
+  token-name: satoken
+  timeout: 2592000
+  active-timeout: -1
+  is-concurrent: true
+  is-share: true
+  token-style: uuid
+  is-log: false
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    disable-swagger-default-url: true
+    urls:
+      - name: auth
+        url: /auth/v3/api-docs
+      - name: subject
+        url: /subject/v3/api-docs
+      - name: practice
+        url: /practice/v3/api-docs
+      - name: circle
+        url: /circle/v3/api-docs
+      - name: interview
+        url: /interview/v3/api-docs
+      - name: oss
+        url: /oss/v3/api-docs
+
+colacode:
+  gateway:
+    routes:
+      definitions:
+        - id: colacode-auth
+          uri: lb://colacode-auth
+          path: /auth/**
+        - id: colacode-subject
+          uri: lb://colacode-subject
+          path: /subject/**
+        - id: colacode-practice
+          uri: lb://colacode-practice
+          path: /practice/**
+        - id: colacode-circle
+          uri: lb://colacode-circle
+          path: /circle/**
+        - id: colacode-interview
+          uri: lb://colacode-interview
+          path: /interview/**
+        - id: colacode-oss
+          uri: lb://colacode-oss
+          path: /oss/**
+        - id: colacode-wx
+          uri: lb://colacode-wx
+          path: /wx/**
+        - id: colacode-auth-openapi
+          uri: lb://colacode-auth
+          path: /auth/v3/api-docs
+        - id: colacode-subject-openapi
+          uri: lb://colacode-subject
+          path: /subject/v3/api-docs
+        - id: colacode-practice-openapi
+          uri: lb://colacode-practice
+          path: /practice/v3/api-docs
+        - id: colacode-circle-openapi
+          uri: lb://colacode-circle
+          path: /circle/v3/api-docs
+        - id: colacode-interview-openapi
+          uri: lb://colacode-interview
+          path: /interview/v3/api-docs
+        - id: colacode-oss-openapi
+          uri: lb://colacode-oss
+          path: /oss/v3/api-docs
+    auth:
+      login-header-name: loginId
+      exclude-paths:
+        - /auth/user/login
+        - /auth/user/register
+        - /auth/user/isLogin
+        - /wx/**
+        - /oss/upload
+        - /oss/download/**
+        - /oss/delete/**
+        - /oss/adapters
+        - /oss/switch
+        - /circle/sensitive/list
+        - /subject/info/page
+        - /subject/info/query
+        - /subject/info/contribute
+        - /subject/search/query
+        - /subject/category/queryTree
+        - /subject/category/queryPrimaryCategory
+        - /subject/category/queryCategoryByPrimary
+        - /subject/category/queryCategoryAndLabel
+        - /subject/label/queryByCategoryId
+        - /practice/preSet/list
+        - /practice/rankList
+        - /interview/history
+        - /interview/detail
+        - /actuator/**
+        - /druid/**
+        - /swagger-ui.html
+        - /swagger-ui/**
+        - /v3/api-docs/**
+    rate-limit:
+      enabled: true
+      route-rules:
+        - resource: colacode-auth
+          count: 50
+          interval-sec: 1
+        - resource: colacode-subject
+          count: 100
+          interval-sec: 1
+        - resource: colacode-practice
+          count: 80
+          interval-sec: 1
+        - resource: colacode-circle
+          count: 80
+          interval-sec: 1
+        - resource: colacode-interview
+          count: 40
+          interval-sec: 1
+        - resource: colacode-oss
+          count: 30
+          interval-sec: 1
+        - resource: colacode-wx
+          count: 20
+          interval-sec: 1
+      api-rules:
+        - resource: auth-login-api
+          pattern: /auth/user/login
+          count: 5
+          interval-sec: 1
+        - resource: auth-register-api
+          pattern: /auth/user/register
+          count: 2
+          interval-sec: 1
+        - resource: oss-upload-api
+          pattern: /oss/upload
+          count: 10
+          interval-sec: 1

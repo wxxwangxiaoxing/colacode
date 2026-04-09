@@ -1,0 +1,19 @@
+server:
+  port: 3012
+
+spring:
+  application:
+    name: colacode-wx
+  data:
+    redis:
+      host: 117.72.14.166
+      port: 6379
+      password: jichi1234
+      database: 1
+
+wx:
+  mp:
+    app-id: your-app-id
+    secret: your-secret
+    token: colacode
+    aes-key: your-aes-key

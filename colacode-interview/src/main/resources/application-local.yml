@@ -1,0 +1,46 @@
+server:
+  port: ${BOOT3_SERVER_PORT:3016}
+
+spring:
+  application:
+    name: colacode-interview-boot3
+  datasource:
+    url: ${BOOT3_DB_URL:jdbc:mysql://127.0.0.1:3306/colacode?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false}
+    username: ${BOOT3_DB_USERNAME:root}
+    password: ${BOOT3_DB_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  data:
+    redis:
+      host: ${BOOT3_REDIS_HOST:127.0.0.1}
+      port: ${BOOT3_REDIS_PORT:6379}
+      password: ${BOOT3_REDIS_PASSWORD:}
+      database: ${BOOT3_REDIS_DATABASE:0}
+      timeout: 5s
+  cloud:
+    compatibility-verifier:
+      enabled: false
+
+mybatis-plus:
+  mapper-locations: classpath*:mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: auto
+
+sa-token:
+  token-name: satoken
+  timeout: 2592000
+  active-timeout: -1
+  is-concurrent: true
+  is-share: true
+  token-style: uuid
+  is-log: true
+
+interview:
+  ai:
+    enabled: ${BOOT3_AI_ENABLED:false}
+    service-name: ${BOOT3_AI_SERVICE_NAME:external-ai-service}
+    base-url: ${BOOT3_AI_BASE_URL:}
+

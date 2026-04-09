@@ -1,0 +1,219 @@
+version: '3.8'
+
+services:
+  gateway:
+    image: ghcr.io/wxxwangxiaoxing/colacode-gateway:master
+    container_name: colacode-gateway
+    ports:
+      - "5000:5000"
+    environment:
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+    depends_on:
+      - redis
+      - nacos
+    networks:
+      - colacode-net
+    restart: always
+
+  auth:
+    image: ghcr.io/wxxwangxiaoxing/colacode-auth:master
+    container_name: colacode-auth
+    ports:
+      - "3011:3011"
+    environment:
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+    depends_on:
+      - mysql
+      - redis
+      - nacos
+    networks:
+      - colacode-net
+    restart: always
+
+  subject:
+    image: ghcr.io/wxxwangxiaoxing/colacode-subject:master
+    container_name: colacode-subject
+    ports:
+      - "3010:3010"
+    environment:
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+    depends_on:
+      - mysql
+      - redis
+      - elasticsearch
+      - rocketmq
+      - nacos
+    networks:
+      - colacode-net
+    restart: always
+
+  practice:
+    image: ghcr.io/wxxwangxiaoxing/colacode-practice:master
+    container_name: colacode-practice
+    ports:
+      - "3013:3013"
+    environment:
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+    depends_on:
+      - mysql
+      - redis
+      - nacos
+    networks:
+      - colacode-net
+    restart: always
+
+  circle:
+    image: ghcr.io/wxxwangxiaoxing/colacode-circle:master
+    container_name: colacode-circle
+    ports:
+      - "3014:3014"
+    environment:
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+    depends_on:
+      - mysql
+      - redis
+      - nacos
+    networks:
+      - colacode-net
+    restart: always
+
+  interview:
+    image: ghcr.io/wxxwangxiaoxing/colacode-interview:master
+    container_name: colacode-interview
+    ports:
+      - "3015:3015"
+    environment:
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+    depends_on:
+      - mysql
+      - redis
+      - nacos
+    networks:
+      - colacode-net
+    restart: always
+
+  oss:
+    image: ghcr.io/wxxwangxiaoxing/colacode-oss:master
+    container_name: colacode-oss
+    ports:
+      - "4000:4000"
+    environment:
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+    depends_on:
+      - minio
+      - redis
+      - nacos
+    networks:
+      - colacode-net
+    restart: always
+
+  wx:
+    image: ghcr.io/wxxwangxiaoxing/colacode-wx:master
+    container_name: colacode-wx
+    ports:
+      - "3012:3012"
+    environment:
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+    depends_on:
+      - redis
+      - nacos
+    networks:
+      - colacode-net
+    restart: always
+
+  mysql:
+    image: mysql:5.7
+    container_name: colacode-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-123456}
+      MYSQL_DATABASE: colacode
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./doc/colacode-init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - colacode-net
+    restart: always
+
+  redis:
+    image: redis:7-alpine
+    container_name: colacode-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - colacode-net
+    restart: always
+
+  nacos:
+    image: nacos/nacos-server:v2.2.0
+    container_name: colacode-nacos
+    environment:
+      MODE: standalone
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+    networks:
+      - colacode-net
+    restart: always
+
+  elasticsearch:
+    image: elasticsearch:7.14.0
+    container_name: colacode-es
+    environment:
+      discovery.type: single-node
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    networks:
+      - colacode-net
+    restart: always
+
+  minio:
+    image: minio/minio:latest
+    container_name: colacode-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+    networks:
+      - colacode-net
+    restart: always
+
+  rocketmq:
+    image: apache/rocketmq:5.1.0
+    container_name: colacode-rocketmq
+    ports:
+      - "9876:9876"
+    environment:
+      JAVA_OPT: "-Xms256m -Xmx256m"
+    networks:
+      - colacode-net
+    restart: always
+
+volumes:
+  mysql-data:
+  redis-data:
+  es-data:
+  minio-data:
+
+networks:
+  colacode-net:
+    driver: bridge

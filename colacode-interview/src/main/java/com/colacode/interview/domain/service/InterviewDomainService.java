@@ -9,17 +9,21 @@ import com.colacode.interview.infra.entity.InterviewHistory;
 import com.colacode.interview.infra.entity.InterviewQuestionHistory;
 import com.colacode.interview.infra.mapper.InterviewHistoryMapper;
 import com.colacode.interview.infra.mapper.InterviewQuestionHistoryMapper;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @Slf4j
 @Service
 public class InterviewDomainService {
 
+    @Getter
     private final List<InterviewEngine> engineList;
     private final InterviewHistoryMapper interviewHistoryMapper;
     private final InterviewQuestionHistoryMapper interviewQuestionHistoryMapper;
@@ -138,10 +142,14 @@ public class InterviewDomainService {
     }
 
     private InterviewEngine getEngine(String engineType) {
-        InterviewEngine engine = engineMap.get(engineType);
+        String resolvedEngineType = StringUtils.hasText(engineType)
+                ? engineType.trim().toUpperCase(Locale.ROOT)
+                : "DATABASE";
+        InterviewEngine engine = engineMap.get(resolvedEngineType);
         if (engine == null) {
-            throw new IllegalArgumentException("不支持的面试引擎: " + engineType);
+            throw new IllegalArgumentException("不支持的面试引擎: " + resolvedEngineType);
         }
         return engine;
     }
+
 }

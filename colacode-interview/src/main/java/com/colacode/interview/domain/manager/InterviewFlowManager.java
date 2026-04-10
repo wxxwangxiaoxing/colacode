@@ -7,6 +7,7 @@ import com.colacode.interview.application.dto.session.InterviewSessionKeywordDTO
 import com.colacode.interview.application.dto.session.InterviewSessionQuestionDTO;
 import com.colacode.interview.application.dto.session.InterviewSessionReportDTO;
 import com.colacode.interview.application.dto.session.InterviewSessionStatusDTO;
+import com.colacode.interview.application.dto.session.InterviewSessionSummaryDTO;
 import com.colacode.interview.application.dto.session.NextQuestionRespDTO;
 import com.colacode.interview.application.dto.session.StartInterviewSessionReqDTO;
 import com.colacode.interview.application.dto.session.StartInterviewSessionRespDTO;
@@ -58,7 +59,7 @@ public class InterviewFlowManager {
         if (keywords.isEmpty()) {
             throw new BusinessException(ResultCodeEnum.BAD_REQUEST, "至少选择一个知识点后再开始面试");
         }
-        String engineType = StringUtils.hasText(reqDTO.getEngineType()) ? reqDTO.getEngineType() : "DATABASE";
+        String engineType = normalizeEngineType(reqDTO.getEngineType());
         List<InterviewQuestionBO> generated = interviewDomainService.startInterview(engineType, keywords);
         if (generated.isEmpty()) {
             throw new BusinessException(ResultCodeEnum.SYSTEM_ERROR, "未生成任何面试题");
@@ -104,6 +105,16 @@ public class InterviewFlowManager {
         respDTO.setTotalQuestionCount(selected.size());
         respDTO.setFirstQuestion(toQuestionDTO(savedRecords.get(0), 1));
         return respDTO;
+    }
+
+    public List<InterviewSessionSummaryDTO> listSessions(Long userId, int pageNo, int pageSize) {
+        if (userId == null) {
+            throw new BusinessException(ResultCodeEnum.UNAUTHORIZED, "未获取到登录用户信息");
+        }
+        return interviewSessionDomainService.listSessions(userId, pageNo, pageSize)
+                .stream()
+                .map(this::toSessionSummaryDTO)
+                .collect(Collectors.toList());
     }
 
     public SubmitAnswerRespDTO submitAnswer(SubmitAnswerReqDTO reqDTO) {
@@ -237,6 +248,23 @@ public class InterviewFlowManager {
         }).collect(Collectors.toList());
     }
 
+    private InterviewSessionSummaryDTO toSessionSummaryDTO(InterviewSession session) {
+        InterviewSessionSummaryDTO dto = new InterviewSessionSummaryDTO();
+        dto.setSessionId(session.getId());
+        dto.setInterviewType(session.getInterviewType());
+        dto.setPostType(session.getPostType());
+        dto.setEngineType(session.getEngineType());
+        dto.setStatus(session.getStatus());
+        dto.setCurrentQuestionNo(session.getCurrentQuestionNo());
+        dto.setTotalQuestionCount(session.getTotalQuestionCount());
+        dto.setTotalScore(session.getTotalScore());
+        dto.setReportId(session.getReportId());
+        dto.setDurationSeconds(session.getDurationSeconds());
+        dto.setStartTime(session.getStartTime());
+        dto.setEndTime(session.getEndTime());
+        return dto;
+    }
+
     private InterviewSessionQuestionDTO toQuestionDTO(InterviewQuestionRecord record, Integer questionNo) {
         InterviewSessionQuestionDTO dto = new InterviewSessionQuestionDTO();
         dto.setRecordId(record.getId());
@@ -311,5 +339,9 @@ public class InterviewFlowManager {
 
     private String defaultIfBlank(String value, String defaultValue) {
         return StringUtils.hasText(value) ? value : defaultValue;
+    }
+
+    private String normalizeEngineType(String engineType) {
+        return StringUtils.hasText(engineType) ? engineType.trim().toUpperCase(java.util.Locale.ROOT) : "DATABASE";
     }
 }

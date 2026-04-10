@@ -27,6 +27,9 @@ public class SubjectInfo implements Serializable {
     @TableField(exist = false)
     private String subjectComment;
 
+    @TableField("browse_count")
+    private Long browseCount;
+
     @TableField(fill = FieldFill.INSERT)
     private String createdBy;
 

@@ -24,7 +24,7 @@ spring:
 
 interview:
   ai:
-    enabled: false
-    api-key: ""
-    service-name: external-ai-service
-    base-url: ""
+    enabled: ${INTERVIEW_AI_ENABLED:true}
+    api-key: ${INTERVIEW_AI_API_KEY:}
+    service-name: ${INTERVIEW_AI_SERVICE_NAME:colacode-ai}
+    base-url: ${INTERVIEW_AI_BASE_URL:}

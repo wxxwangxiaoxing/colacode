@@ -15,13 +15,3 @@ spring:
         namespace: ${NACOS_NAMESPACE:${SPRING_CLOUD_NACOS_CONFIG_NAMESPACE:dev}}
         group: ${NACOS_GROUP:${SPRING_CLOUD_NACOS_CONFIG_GROUP:DEFAULT_GROUP}}
         file-extension: yaml
-        shared-configs:
-          - data-id: common-datasource.yaml
-            group: ${NACOS_GROUP:${SPRING_CLOUD_NACOS_CONFIG_GROUP:DEFAULT_GROUP}}
-            refresh: true
-          - data-id: common-redis.yaml
-            group: ${NACOS_GROUP:${SPRING_CLOUD_NACOS_CONFIG_GROUP:DEFAULT_GROUP}}
-            refresh: true
-          - data-id: common-rocketmq.yaml
-            group: ${NACOS_GROUP:${SPRING_CLOUD_NACOS_CONFIG_GROUP:DEFAULT_GROUP}}
-            refresh: true

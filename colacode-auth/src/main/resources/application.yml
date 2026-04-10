@@ -1,20 +1,28 @@
 # 服务特定配置（数据源、Redis、Sa-Token 已从 Nacos 共享配置加载）
+# 服务端口配置
 server:
   port: 3011
 
+# Spring应用配置
 spring:
   application:
     name: colacode-auth
+  # 配置导入，从Nacos共享配置加载数据源和Redis配置
   config:
     import:
       - 'optional:nacos:common-datasource.yaml'
       - 'optional:nacos:common-redis.yaml'
+  # Nacos服务发现配置
   cloud:
     nacos:
       discovery:
+        # Nacos服务器地址，支持环境变量覆盖
         server-addr: ${NACOS_SERVER_ADDR:${SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR:10.0.20.25:8848}}
+        # 命名空间，支持环境变量覆盖
         namespace: ${NACOS_NAMESPACE:${SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE:dev}}
+        # 分组，支持环境变量覆盖
         group: ${NACOS_GROUP:${SPRING_CLOUD_NACOS_DISCOVERY_GROUP:DEFAULT_GROUP}}
+      # Nacos配置中心配置
       config:
         server-addr: ${NACOS_SERVER_ADDR:${SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR:10.0.20.25:8848}}
         namespace: ${NACOS_NAMESPACE:${SPRING_CLOUD_NACOS_CONFIG_NAMESPACE:dev}}
@@ -22,8 +30,10 @@ spring:
         import-check:
           enabled: false
 
+# 认证服务自定义配置
 colacode:
   auth:
+    # 管理员角色配置，定义哪些角色key视为管理员角色
     admin:
       role-keys:
         - admin
@@ -32,9 +42,15 @@ colacode:
         - user:manage
         - role:manage
         - permission:manage
+    # 登录安全配置，防止暴力破解
     login-security:
+      # 每分钟最大尝试次数
       max-attempts-per-minute: 10
+      # 最大失败次数后锁定
       max-failures: 5
+      # 尝试时间窗口（秒）
       attempt-window-seconds: 60
+      # 失败记录时间窗口（秒）
       failure-window-seconds: 900
+      # 锁定时间（秒）
       lock-seconds: 900

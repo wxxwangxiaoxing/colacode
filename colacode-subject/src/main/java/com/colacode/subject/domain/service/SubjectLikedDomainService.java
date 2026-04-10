@@ -4,7 +4,9 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.colacode.subject.infra.entity.SubjectLiked;
 import com.colacode.subject.infra.mapper.SubjectLikedMapper;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -17,6 +19,7 @@ public class SubjectLikedDomainService {
         this.subjectLikedMapper = subjectLikedMapper;
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public void addOrUpdate(SubjectLiked liked) {
         LambdaQueryWrapper<SubjectLiked> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(SubjectLiked::getSubjectId, liked.getSubjectId());
@@ -25,8 +28,18 @@ public class SubjectLikedDomainService {
         if (exist != null) {
             exist.setLikedStatus(liked.getLikedStatus());
             subjectLikedMapper.updateById(exist);
-        } else {
+            return;
+        }
+
+        try {
             subjectLikedMapper.insert(liked);
+        } catch (DuplicateKeyException e) {
+            SubjectLiked retryExist = subjectLikedMapper.selectOne(wrapper);
+            if (retryExist == null) {
+                throw e;
+            }
+            retryExist.setLikedStatus(liked.getLikedStatus());
+            subjectLikedMapper.updateById(retryExist);
         }
     }
 

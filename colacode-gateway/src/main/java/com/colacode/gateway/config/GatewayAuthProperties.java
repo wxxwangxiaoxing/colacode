@@ -1,11 +1,15 @@
 package com.colacode.gateway.config;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@Setter
+@Getter
 @Component
 @ConfigurationProperties(prefix = "colacode.gateway.auth")
 public class GatewayAuthProperties {
@@ -14,19 +18,4 @@ public class GatewayAuthProperties {
 
     private List<String> excludePaths = new ArrayList<>();
 
-    public String getLoginHeaderName() {
-        return loginHeaderName;
-    }
-
-    public void setLoginHeaderName(String loginHeaderName) {
-        this.loginHeaderName = loginHeaderName;
-    }
-
-    public List<String> getExcludePaths() {
-        return excludePaths;
-    }
-
-    public void setExcludePaths(List<String> excludePaths) {
-        this.excludePaths = excludePaths;
-    }
 }

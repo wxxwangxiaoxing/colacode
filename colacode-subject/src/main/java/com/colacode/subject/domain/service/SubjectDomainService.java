@@ -2,23 +2,28 @@ package com.colacode.subject.domain.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.colacode.subject.domain.bo.SubjectCategoryBO;
+import com.colacode.common.constants.WebConstants;
+import com.colacode.subject.application.mq.SubjectEsSyncMessage;
+import com.colacode.subject.application.mq.SubjectEsSyncProducer;
+import com.colacode.subject.application.mq.SubjectMqConstants;
+import com.colacode.subject.domain.bo.ContributeStat;
 import com.colacode.subject.domain.bo.SubjectInfoBO;
-import com.colacode.subject.domain.converter.SubjectCategoryBOConverter;
 import com.colacode.subject.domain.converter.SubjectInfoBOConverter;
 import com.colacode.subject.domain.strategy.SubjectTypeHandler;
 import com.colacode.subject.domain.strategy.SubjectTypeHandlerFactory;
 import com.colacode.subject.infra.entity.EsSyncStatus;
+import com.colacode.subject.infra.entity.SubjectCategory;
+import com.colacode.subject.infra.entity.SubjectInfo;
+import com.colacode.subject.infra.entity.SubjectMapping;
+import com.colacode.subject.infra.es.SubjectEsService;
+import com.colacode.subject.infra.mapper.EsSyncStatusMapper;
 import com.colacode.subject.infra.mapper.SubjectCategoryMapper;
 import com.colacode.subject.infra.mapper.SubjectInfoMapper;
 import com.colacode.subject.infra.mapper.SubjectMappingMapper;
-import com.colacode.subject.infra.mapper.EsSyncStatusMapper;
-import com.colacode.subject.domain.bo.ContributeStat;
-import com.colacode.subject.application.mq.SubjectEsSyncProducer;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -28,10 +33,13 @@ import java.util.List;
 @Service
 public class SubjectDomainService {
 
+    private static final int DEFAULT_MAX_RETRY_COUNT = 3;
+
     private final SubjectInfoMapper subjectInfoMapper;
     private final SubjectMappingMapper subjectMappingMapper;
     private final SubjectCategoryMapper subjectCategoryMapper;
     private final SubjectTypeHandlerFactory subjectTypeHandlerFactory;
+    @Getter
     private final SubjectEsService subjectEsService;
     private final EsSyncStatusMapper esSyncStatusMapper;
     private final SubjectEsSyncProducer subjectEsSyncProducer;
@@ -56,15 +64,12 @@ public class SubjectDomainService {
         SubjectInfo entity = SubjectInfoBOConverter.INSTANCE.convertToEntity(subjectInfoBO);
         subjectInfoMapper.insert(entity);
         subjectInfoBO.setId(entity.getId());
-
         saveCategoryMapping(subjectInfoBO);
-
         SubjectTypeHandler handler = subjectTypeHandlerFactory.getHandler(subjectInfoBO.getSubjectType());
         if (handler != null) {
             handler.add(subjectInfoBO);
         }
-
-        syncToEs(subjectInfoBO);
+        syncToEs(subjectInfoBO, EsSyncStatus.OPERATION_ADD_UPDATE);
     }
 
     public void updateSubject(SubjectInfoBO subjectInfoBO) {
@@ -78,23 +83,36 @@ public class SubjectDomainService {
             handler.update(subjectInfoBO);
         }
 
-        syncToEs(subjectInfoBO);
+        syncToEs(subjectInfoBO, EsSyncStatus.OPERATION_ADD_UPDATE);
     }
 
     public void deleteSubject(Long subjectId) {
         subjectInfoMapper.deleteById(subjectId);
-        
-        createSyncTask(subjectId, EsSyncStatus.OPERATION_DELETE, null, EsSyncStatus.STATUS_PENDING);
-        subjectEsSyncProducer.sendDeleteMessage(subjectId);
-        
-        log.info("删除题目成功, subjectId: {}", subjectId);
+
+        EsSyncStatus task = createSyncTask(subjectId, EsSyncStatus.OPERATION_DELETE, null);
+        subjectEsSyncProducer.resendByTask(task);
+
+        log.info("删除题目成功, subjectId: {}, taskId: {}", subjectId, task.getId());
     }
 
     public SubjectInfoBO querySubject(Long subjectId) {
+        return querySubject(subjectId, true);
+    }
+
+    public SubjectInfoBO querySubjectWithoutBrowseIncrement(Long subjectId) {
+        return querySubject(subjectId, false);
+    }
+
+    private SubjectInfoBO querySubject(Long subjectId, boolean incrementBrowseCount) {
         SubjectInfo subjectInfo = subjectInfoMapper.selectById(subjectId);
         if (subjectInfo == null) return null;
 
         SubjectInfoBO bo = SubjectInfoBOConverter.INSTANCE.convertToBO(subjectInfo);
+        if (incrementBrowseCount) {
+            subjectInfoMapper.incrBrowseCount(subjectId);
+            long currentBrowseCount = subjectInfo.getBrowseCount() == null ? 0L : subjectInfo.getBrowseCount();
+            bo.setBrowseCount(currentBrowseCount + 1);
+        }
         bo.setCategoryIds(getCategoryIdsBySubjectId(subjectId));
 
         SubjectTypeHandler handler = subjectTypeHandlerFactory.getHandler(subjectInfo.getSubjectType());
@@ -137,51 +155,39 @@ public class SubjectDomainService {
         return categoryIds;
     }
 
-    private void syncToEs(SubjectInfoBO subjectInfoBO) {
-        Long subjectId = subjectInfoBO.getId();
-        
-        createSyncTask(subjectId, EsSyncStatus.OPERATION_ADD_UPDATE, null, EsSyncStatus.STATUS_PENDING);
-        subjectEsSyncProducer.sendAddUpdateMessage(subjectId);
-        
-        log.info("ES同步任务已创建, subjectId: {}", subjectId);
+    private void syncToEs(SubjectInfoBO subjectInfoBO, Integer operation) {
+        EsSyncStatus task = createSyncTask(subjectInfoBO.getId(), operation, subjectInfoBO);
+        subjectEsSyncProducer.resendByTask(task);
+        log.info("ES同步任务已创建, subjectId: {}, taskId: {}", subjectInfoBO.getId(), task.getId());
     }
 
-    private SubjectEsDTO buildEsDto(SubjectInfoBO subjectInfoBO) {
-        SubjectEsDTO esDTO = new SubjectEsDTO();
-        esDTO.setId(subjectInfoBO.getId());
-        esDTO.setSubjectName(subjectInfoBO.getSubjectName());
-        esDTO.setSubjectParse(subjectInfoBO.getSubjectParse());
-        esDTO.setSubjectComment(subjectInfoBO.getSubjectComment());
-        esDTO.setSubjectDiff(subjectInfoBO.getSubjectDiff());
-        esDTO.setSubjectType(subjectInfoBO.getSubjectType());
-
-        List<Long> categoryIds = subjectInfoBO.getCategoryIds();
-        if (categoryIds != null && !categoryIds.isEmpty()) {
-            SubjectCategory category = subjectCategoryMapper.selectById(categoryIds.get(0));
-            if (category != null) {
-                esDTO.setCategoryName(category.getCategoryName());
-            }
-        }
-        return esDTO;
-    }
-
-    private void createSyncTask(Long bizId, Integer operation, String errorMsg, Integer status) {
+    private EsSyncStatus createSyncTask(Long bizId, Integer operation, SubjectInfoBO subjectInfoBO) {
         EsSyncStatus syncTask = new EsSyncStatus();
         syncTask.setBizId(bizId);
-        syncTask.setBizType("subject");
+        syncTask.setBizType(SubjectMqConstants.BIZ_TYPE_SUBJECT);
         syncTask.setOperation(operation);
-        syncTask.setStatus(status);
-        syncTask.setErrorMsg(errorMsg);
+        syncTask.setStatus(EsSyncStatus.STATUS_PENDING);
+        syncTask.setErrorMsg(null);
         syncTask.setRetryCount(0);
-        syncTask.setMaxRetryCount(3);
-        
-        if (status == EsSyncStatus.STATUS_SUCCESS) {
-            syncTask.setLastSyncTime(new Date());
-        } else {
-            syncTask.setNextRetryTime(new Date());
-        }
-        
+        syncTask.setMaxRetryCount(DEFAULT_MAX_RETRY_COUNT);
+        syncTask.setNextRetryTime(new Date());
+        syncTask.setLastSyncTime(null);
+        syncTask.setTraceId(MDC.get(WebConstants.TRACE_ID_MDC_KEY));
+        syncTask.setPayloadJson(buildPayloadJson(bizId, operation, subjectInfoBO, syncTask.getTraceId()));
         esSyncStatusMapper.insert(syncTask);
+        return syncTask;
+    }
+
+    private String buildPayloadJson(Long bizId, Integer operation, SubjectInfoBO subjectInfoBO, String traceId) {
+        SubjectEsSyncMessage message = new SubjectEsSyncMessage();
+        message.setSubjectId(bizId);
+        message.setOperation(operation);
+        message.setRetryCount(0);
+        message.setTraceId(traceId);
+        if (subjectInfoBO != null) {
+            message.setPayloadJson(com.alibaba.fastjson.JSON.toJSONString(subjectInfoBO));
+        }
+        return com.alibaba.fastjson.JSON.toJSONString(message);
     }
 
     public Page<SubjectInfoBO> getSubjectPage(Long categoryId, Long labelId, Integer subjectType, int pageNo, int pageSize) {

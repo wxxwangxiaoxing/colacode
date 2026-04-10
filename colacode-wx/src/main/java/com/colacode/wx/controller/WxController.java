@@ -6,6 +6,8 @@ import com.colacode.wx.handler.WxMessageHandler;
 import com.colacode.wx.handler.WxMessageHandlerFactory;
 import com.colacode.wx.util.WxSignatureUtil;
 import com.colacode.wx.util.WxXmlUtil;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 @RestController
 @RequestMapping("/wx")
+@Tag(name = "微信消息", description = "微信公众平台消息处理")
 public class WxController {
 
     @Value("${wx.mp.token:colacode}")
@@ -25,6 +28,7 @@ public class WxController {
     }
 
     @GetMapping(produces = "text/plain;charset=utf-8")
+    @Operation(summary = "微信服务器验证", description = "验证微信服务器签名")
     public String verify(
             @RequestParam("signature") String signature,
             @RequestParam("timestamp") String timestamp,
@@ -42,6 +46,7 @@ public class WxController {
     }
 
     @PostMapping(produces = "application/xml;charset=utf-8")
+    @Operation(summary = "处理微信消息", description = "接收并处理微信消息")
     public String handleMessage(@RequestBody String xmlData) {
         log.info("收到微信消息: {}", xmlData);
 

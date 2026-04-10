@@ -22,9 +22,6 @@ spring:
         group: ${NACOS_GROUP:${SPRING_CLOUD_NACOS_CONFIG_GROUP:DEFAULT_GROUP}}
         import-check:
           enabled: false
-  autoconfigure:
-    exclude:
-      - org.apache.rocketmq.spring.autoconfigure.RocketMQAutoConfiguration
 
 elasticsearch:
   host: 127.0.0.1

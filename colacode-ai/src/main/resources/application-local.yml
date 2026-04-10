@@ -1,37 +1,79 @@
+# 本地开发环境配置
+# 使用方式: 运行jar时添加 --spring.profiles.active=local
+# 或在IDEA中设置Spring Profile为local
 server:
+  # 服务端口，支持通过BOOT3_SERVER_PORT环境变量覆盖
   port: ${BOOT3_SERVER_PORT:3020}
 
 spring:
+  # 应用名称
   application:
     name: colacode-ai-boot3
+  # Spring Cloud配置
   cloud:
-    nacos:
-      config:
-        import-check:
-          enabled: false
-      discovery:
+    # Nacos配置中心配置
+    config:
+      # 禁用导入检查
+      import-check:
         enabled: false
+    # Nacos服务发现配置
+    discovery:
+      # 本地开发时禁用服务发现
+      enabled: false
+    # 兼容性验证器配置
     compatibility-verifier:
       enabled: false
+  # 自动配置排除
   autoconfigure:
     exclude:
+      # 排除数据库自动配置（AI模块无需数据库）
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      # 排除Ollama自动配置（避免与OpenAI冲突）
+      - org.springframework.ai.model.ollama.autoconfigure.OllamaChatAutoConfiguration
+  # Spring AI配置
+  ai:
+    # OpenAI模型配置（支持环境变量覆盖）
+    openai:
+      # API地址
+      base-url: ${OPENAI_BASE_URL:http://localhost:48760}
+      # API密钥
+      api-key: ${OPENAI_API_KEY:79b658d81c2851bfc2d6c3a9236d49e3b808a44394e939fb4460c3810f7419b1}
+      # 聊天选项配置
+      chat:
+        options:
+          # 模型名称
+          model: ${OPENAI_MODEL:gpt-5.4}
 
+# 项目自定义配置
 colacode:
   ai:
-    default-model: mock
+    # 默认使用的AI模型
+    default-model: openai
     
+    # DeepSeek模型配置
     deepseek:
       enabled: false
       api-key: ${DEEPSEEK_API_KEY:}
       base-url: https://api.deepseek.com
       model: deepseek-chat
       
+    # OpenAI模型配置
     openai:
-      enabled: false
+      enabled: true
+      base-url: ${OPENAI_BASE_URL:http://localhost:48760}
+      api-key: ${OPENAI_API_KEY:79b658d81c2851bfc2d6c3a9236d49e3b808a44394e939fb4460c3810f7419b1}
+      model: gpt-5.4
       
+    # ChatGLM模型配置
     chatglm:
       enabled: false
       
+    # 通义千问模型配置
     qwen:
       enabled: false
+
+    # Ollama本地模型配置
+    ollama:
+      enabled: false
+      base-url: http://localhost:11434
+      model: llama3

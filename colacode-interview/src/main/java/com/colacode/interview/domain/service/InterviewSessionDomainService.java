@@ -69,6 +69,17 @@ public class InterviewSessionDomainService {
         return session;
     }
 
+    public List<InterviewSession> listSessions(Long userId, int pageNo, int pageSize) {
+        int safePageNo = Math.max(pageNo, 1);
+        int safePageSize = Math.max(pageSize, 1);
+        int offset = (safePageNo - 1) * safePageSize;
+        LambdaQueryWrapper<InterviewSession> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(InterviewSession::getUserId, userId)
+                .orderByDesc(InterviewSession::getId)
+                .last("limit " + offset + "," + safePageSize);
+        return interviewSessionMapper.selectList(wrapper);
+    }
+
     public InterviewQuestionRecord getQuestionRecord(Long recordId) {
         InterviewQuestionRecord record = interviewQuestionRecordMapper.selectById(recordId);
         if (record == null) {

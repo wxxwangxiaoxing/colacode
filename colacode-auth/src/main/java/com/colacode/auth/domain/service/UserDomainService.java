@@ -19,6 +19,12 @@ import org.springframework.util.StringUtils;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * 用户领域服务
+ * 处理用户相关的业务逻辑，包括登录、注册、密码管理等
+ *
+ * @author wxx
+ */
 @Slf4j
 @Service
 public class UserDomainService {
@@ -38,11 +44,23 @@ public class UserDomainService {
         this.loginSecurityService = loginSecurityService;
     }
 
+    /**
+     * 根据用户ID获取用户信息
+     *
+     * @param id 用户ID
+     * @return 用户业务对象
+     */
     public UserBO getUserById(Long id) {
         AuthUser user = authUserMapper.selectById(id);
         return UserBOConverter.INSTANCE.convertToBO(user);
     }
 
+    /**
+     * 根据用户名获取用户信息
+     *
+     * @param userName 用户名
+     * @return 用户业务对象
+     */
     public UserBO getUserByName(String userName) {
         LambdaQueryWrapper<AuthUser> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(AuthUser::getUserName, userName);
@@ -50,6 +68,13 @@ public class UserDomainService {
         return UserBOConverter.INSTANCE.convertToBO(user);
     }
 
+    /**
+     * 用户登录验证
+     *
+     * @param userName 用户名
+     * @param password 密码
+     * @return 登录成功的用户ID
+     */
     public Long login(String userName, String password) {
         if (!StringUtils.hasText(userName) || !StringUtils.hasText(password)) {
             throw new BusinessException(ResultCodeEnum.BAD_REQUEST, "用户名和密码不能为空");
@@ -78,6 +103,11 @@ public class UserDomainService {
         return userBO.getId();
     }
 
+    /**
+     * 用户注册
+     *
+     * @param userBO 用户业务对象
+     */
     public void register(UserBO userBO) {
         validatePasswordStrength(userBO.getPassword());
         UserBO existUser = getUserByName(userBO.getUserName());
@@ -87,6 +117,11 @@ public class UserDomainService {
         addUser(userBO);
     }
 
+    /**
+     * 添加用户
+     *
+     * @param userBO 用户业务对象
+     */
     public void addUser(UserBO userBO) {
         AuthUser entity = UserBOConverter.INSTANCE.convertToEntity(userBO);
         if (StringUtils.hasText(entity.getPassword())) {
@@ -98,6 +133,11 @@ public class UserDomainService {
         authUserMapper.insert(entity);
     }
 
+    /**
+     * 更新用户信息
+     *
+     * @param userBO 用户业务对象
+     */
     public void updateUser(UserBO userBO) {
         if (userBO.getPassword() != null && StringUtils.hasText(userBO.getPassword())) {
             validatePasswordStrength(userBO.getPassword());
@@ -113,6 +153,14 @@ public class UserDomainService {
         authUserMapper.updateById(entity);
     }
 
+    /**
+     * 修改密码
+     *
+     * @param userId 用户ID
+     * @param oldPassword 旧密码
+     * @param newPassword 新密码
+     * @param confirmPassword 确认密码
+     */
     public void changePassword(Long userId, String oldPassword, String newPassword, String confirmPassword) {
         assertUserExists(userId);
         if (!StringUtils.hasText(oldPassword)) {
@@ -143,6 +191,13 @@ public class UserDomainService {
         authUserMapper.updateById(user);
     }
 
+    /**
+     * 分页获取用户列表
+     *
+     * @param pageNo 页码
+     * @param pageSize 每页数量
+     * @return 用户分页结果
+     */
     public PageResult<UserBO> listUsers(int pageNo, int pageSize) {
         Page<AuthUser> page = new Page<>(pageNo, pageSize);
         Page<AuthUser> result = authUserMapper.selectPage(page, null);
@@ -153,14 +208,32 @@ public class UserDomainService {
                 UserBOConverter.INSTANCE.convertToBOList(result.getRecords()));
     }
 
+    /**
+     * 获取用户角色列表
+     *
+     * @param userId 用户ID
+     * @return 角色key列表
+     */
     public List<String> getRolesByUserId(Long userId) {
         return authUserMapper.selectRolesByUserId(userId);
     }
 
+    /**
+     * 获取用户权限列表
+     *
+     * @param userId 用户ID
+     * @return 权限key列表
+     */
     public List<String> getPermissionsByUserId(Long userId) {
         return authUserMapper.selectPermissionsByUserId(userId);
     }
 
+    /**
+     * 删除用户
+     *
+     * @param operatorUserId 操作者用户ID
+     * @param targetUserId 目标用户ID
+     */
     public void deleteUser(Long operatorUserId, Long targetUserId) {
         assertUserExists(targetUserId);
         if (Objects.equals(operatorUserId, targetUserId)) {
@@ -172,6 +245,13 @@ public class UserDomainService {
         authUserMapper.deleteById(targetUserId);
     }
 
+    /**
+     * 修改用户状态
+     *
+     * @param operatorUserId 操作者用户ID
+     * @param targetUserId 目标用户ID
+     * @param status 状态值
+     */
     public void changeStatus(Long operatorUserId, Long targetUserId, Integer status) {
         assertUserExists(targetUserId);
         if (Objects.equals(operatorUserId, targetUserId) && Integer.valueOf(1).equals(status)) {
@@ -188,6 +268,12 @@ public class UserDomainService {
         authUserMapper.updateById(user);
     }
 
+    /**
+     * 批量获取用户
+     *
+     * @param ids 用户ID列表
+     * @return 用户业务对象列表
+     */
     public List<UserBO> listUsersByIds(List<Long> ids) {
         if (ids == null || ids.isEmpty()) {
             return new java.util.ArrayList<>();

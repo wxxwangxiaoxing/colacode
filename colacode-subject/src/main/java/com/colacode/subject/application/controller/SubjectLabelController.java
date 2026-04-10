@@ -6,12 +6,16 @@ import com.colacode.common.exception.BusinessException;
 import com.colacode.subject.application.dto.SubjectLabelDTO;
 import com.colacode.subject.domain.service.SubjectLabelDomainService;
 import com.colacode.subject.infra.entity.SubjectLabel;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/subject/label")
+@Tag(name = "题目标签管理", description = "题目标签的增删改查")
 public class SubjectLabelController {
 
     private final SubjectLabelDomainService subjectLabelDomainService;
@@ -21,6 +25,7 @@ public class SubjectLabelController {
     }
 
     @PostMapping("/add")
+    @Operation(summary = "新增标签", description = "添加新标签")
     public Result<Void> addLabel(@RequestBody SubjectLabelDTO dto) {
         SubjectLabel label = new SubjectLabel();
         label.setLabelName(dto.getLabelName());
@@ -31,6 +36,7 @@ public class SubjectLabelController {
     }
 
     @PostMapping("/update")
+    @Operation(summary = "更新标签", description = "更新标签信息")
     public Result<Void> updateLabel(@RequestBody SubjectLabelDTO dto) {
         if (dto.getId() == null) {
             throw new BusinessException(ResultCodeEnum.BAD_REQUEST, "标签ID不能为空");
@@ -45,6 +51,7 @@ public class SubjectLabelController {
     }
 
     @PostMapping("/delete")
+    @Operation(summary = "删除标签", description = "删除标签")
     public Result<Void> deleteLabel(@RequestBody SubjectLabelDTO dto) {
         if (dto.getId() == null) {
             throw new BusinessException(ResultCodeEnum.BAD_REQUEST, "标签ID不能为空");
@@ -54,7 +61,8 @@ public class SubjectLabelController {
     }
 
     @GetMapping("/queryByCategoryId")
-    public Result<List<SubjectLabelDTO>> queryByCategoryId(@RequestParam Long categoryId) {
+    @Operation(summary = "根据分类获取标签", description = "根据分类ID获取标签列表")
+    public Result<List<SubjectLabelDTO>> queryByCategoryId(@Parameter(description = "分类ID") @RequestParam Long categoryId) {
         List<SubjectLabel> labels = subjectLabelDomainService.queryByCategoryId(categoryId);
         List<SubjectLabelDTO> dtoList = labels.stream().map(label -> {
             SubjectLabelDTO dto = new SubjectLabelDTO();

@@ -31,10 +31,22 @@ public class CommonFeignRequestInterceptor implements RequestInterceptor {
         RequestAttributes attributes = RequestContextHolder.getRequestAttributes();
         if (attributes instanceof ServletRequestAttributes servletRequestAttributes) {
             HttpServletRequest request = servletRequestAttributes.getRequest();
-            String loginId = request.getHeader(WebConstants.LOGIN_ID_HEADER);
-            if (loginId != null && !loginId.isBlank()) {
-                template.header(WebConstants.LOGIN_ID_HEADER, loginId);
+            propagateHeader(request, template, WebConstants.LOGIN_ID_HEADER);
+            propagateHeader(request, template, WebConstants.LOGIN_USERNAME_HEADER);
+            propagateHeader(request, template, WebConstants.LOGIN_TOKEN_HEADER);
+            propagateHeader(request, template, WebConstants.LOGIN_SOURCE_HEADER);
+
+            String authorization = request.getHeader(WebConstants.AUTHORIZATION_HEADER);
+            if (authorization != null && !authorization.isBlank()) {
+                template.header(WebConstants.AUTHORIZATION_HEADER, authorization);
             }
+        }
+    }
+
+    private void propagateHeader(HttpServletRequest request, RequestTemplate template, String headerName) {
+        String headerValue = request.getHeader(headerName);
+        if (headerValue != null && !headerValue.isBlank()) {
+            template.header(headerName, headerValue);
         }
     }
 }

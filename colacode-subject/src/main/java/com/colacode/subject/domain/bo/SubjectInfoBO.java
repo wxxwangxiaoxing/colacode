@@ -2,12 +2,14 @@ package com.colacode.subject.domain.bo;
 
 import lombok.Data;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 
 @Data
 public class SubjectInfoBO implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private Long id;
@@ -21,6 +23,8 @@ public class SubjectInfoBO implements Serializable {
     private String subjectParse;
 
     private String subjectComment;
+
+    private Long browseCount;
 
     private List<Long> categoryIds;
 

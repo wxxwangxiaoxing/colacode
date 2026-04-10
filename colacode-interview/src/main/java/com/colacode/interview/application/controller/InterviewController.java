@@ -2,8 +2,6 @@ package com.colacode.interview.application.controller;
 
 import com.colacode.common.LoginUserContext;
 import com.colacode.common.Result;
-import com.colacode.common.enums.ResultCodeEnum;
-import com.colacode.common.exception.BusinessException;
 import com.colacode.interview.application.converter.InterviewDTOConverter;
 import com.colacode.interview.application.dto.AnalyseReqDTO;
 import com.colacode.interview.application.dto.InterviewDetailDTO;
@@ -16,6 +14,7 @@ import com.colacode.interview.application.dto.SubmitInterviewReqDTO;
 import com.colacode.interview.application.dto.session.InterviewSessionQuestionDTO;
 import com.colacode.interview.application.dto.session.InterviewSessionReportDTO;
 import com.colacode.interview.application.dto.session.InterviewSessionStatusDTO;
+import com.colacode.interview.application.dto.session.InterviewSessionSummaryDTO;
 import com.colacode.interview.application.dto.session.NextQuestionRespDTO;
 import com.colacode.interview.application.dto.session.SessionActionReqDTO;
 import com.colacode.interview.application.dto.session.StartInterviewSessionReqDTO;
@@ -27,6 +26,9 @@ import com.colacode.interview.domain.bo.InterviewResultBO;
 import com.colacode.interview.domain.bo.KeywordBO;
 import com.colacode.interview.domain.manager.InterviewFlowManager;
 import com.colacode.interview.domain.service.InterviewDomainService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -40,6 +42,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/interview")
+@Tag(name = "面试管理", description = "AI模拟面试相关接口")
 public class InterviewController {
 
     private final InterviewDomainService interviewDomainService;
@@ -52,12 +55,14 @@ public class InterviewController {
     }
 
     @PostMapping("/analyse")
+    @Operation(summary = "分析关键词", description = "根据标签分析面试关键词")
     public Result<List<KeywordDTO>> analyse(@RequestBody AnalyseReqDTO reqDTO) {
         List<KeywordBO> keywords = interviewDomainService.analyse(reqDTO.getEngineType(), reqDTO.getLabels());
         return Result.success(InterviewDTOConverter.INSTANCE.toKeywordDTOList(keywords));
     }
 
     @PostMapping("/start")
+    @Operation(summary = "开始面试", description = "根据关键词开始面试")
     public Result<List<InterviewQuestionDTO>> start(@RequestBody StartInterviewReqDTO reqDTO) {
         List<KeywordBO> keywords = reqDTO.getKeywords().stream().map(item -> {
             KeywordBO bo = new KeywordBO();
@@ -71,52 +76,68 @@ public class InterviewController {
     }
 
     @PostMapping("/session/start")
+    @Operation(summary = "开始面试会话", description = "创建新的AI面试会话")
     public Result<StartInterviewSessionRespDTO> startSession(@RequestBody StartInterviewSessionReqDTO reqDTO) {
-        Long userId = LoginUserContext.getLoginUserIdOrDefault(reqDTO.getUserId());
+        Long userId = reqDTO.getUserId() != null ? reqDTO.getUserId() : LoginUserContext.requireLoginUserId();
         return Result.success(interviewFlowManager.startSession(userId, reqDTO));
     }
 
+    @GetMapping("/session/list")
+    @Operation(summary = "获取面试会话列表", description = "获取用户的面试会话列表")
+    public Result<List<InterviewSessionSummaryDTO>> sessionList(
+            @Parameter(description = "用户ID") @RequestParam(required = false) Long userId,
+            @Parameter(description = "页码") @RequestParam(defaultValue = "1") int pageNo,
+            @Parameter(description = "每页数量") @RequestParam(defaultValue = "10") int pageSize) {
+        userId = userId != null ? userId : LoginUserContext.requireLoginUserId();
+        return Result.success(interviewFlowManager.listSessions(userId, pageNo, pageSize));
+    }
+
     @GetMapping("/session/detail")
-    public Result<InterviewSessionStatusDTO> sessionDetail(@RequestParam Long sessionId) {
+    @Operation(summary = "获取会话详情", description = "获取面试会话的详细状态")
+    public Result<InterviewSessionStatusDTO> sessionDetail(@Parameter(description = "会话ID") @RequestParam Long sessionId) {
         return Result.success(interviewFlowManager.getSessionStatus(sessionId));
     }
 
     @PostMapping("/session/interrupt")
+    @Operation(summary = "中断会话", description = "中断正在进行的面试会话")
     public Result<InterviewSessionStatusDTO> interrupt(@RequestBody SessionActionReqDTO reqDTO) {
         return Result.success(interviewFlowManager.interruptSession(reqDTO.getSessionId()));
     }
 
     @PostMapping("/session/resume")
+    @Operation(summary = "恢复会话", description = "恢复被中断的面试会话")
     public Result<InterviewSessionStatusDTO> resume(@RequestBody SessionActionReqDTO reqDTO) {
         return Result.success(interviewFlowManager.resumeSession(reqDTO.getSessionId()));
     }
 
     @PostMapping("/answer/submit")
+    @Operation(summary = "提交答案", description = "提交用户答案给AI面试官")
     public Result<SubmitAnswerRespDTO> submitAnswer(@RequestBody SubmitAnswerReqDTO reqDTO) {
         return Result.success(interviewFlowManager.submitAnswer(reqDTO));
     }
 
     @GetMapping("/question/result")
-    public Result<InterviewSessionQuestionDTO> questionResult(@RequestParam Long recordId) {
+    @Operation(summary = "获取答题结果", description = "获取用户答题结果")
+    public Result<InterviewSessionQuestionDTO> questionResult(@Parameter(description = "记录ID") @RequestParam Long recordId) {
         return Result.success(interviewFlowManager.getQuestionResult(recordId));
     }
 
     @GetMapping("/next-question")
-    public Result<NextQuestionRespDTO> nextQuestion(@RequestParam Long sessionId) {
+    @Operation(summary = "获取下一题", description = "获取面试的下一道题目")
+    public Result<NextQuestionRespDTO> nextQuestion(@Parameter(description = "会话ID") @RequestParam Long sessionId) {
         return Result.success(interviewFlowManager.nextQuestion(sessionId));
     }
 
     @GetMapping("/report")
-    public Result<InterviewSessionReportDTO> report(@RequestParam Long sessionId) {
+    @Operation(summary = "获取面试报告", description = "获取面试会话的报告")
+    public Result<InterviewSessionReportDTO> report(@Parameter(description = "会话ID") @RequestParam Long sessionId) {
         return Result.success(interviewFlowManager.getReport(sessionId));
     }
 
     @PostMapping("/submit")
+    @Operation(summary = "提交面试结果", description = "提交面试答案获取评估结果")
     public Result<InterviewResultDTO> submit(@RequestBody SubmitInterviewReqDTO reqDTO) {
-        Long userId = LoginUserContext.getLoginUserIdOrDefault(reqDTO.getUserId());
-        if (userId == null) {
-            throw new BusinessException(ResultCodeEnum.UNAUTHORIZED, "未获取到登录用户信息");
-        }
+        Long userId = reqDTO.getUserId() != null ? reqDTO.getUserId() : LoginUserContext.requireLoginUserId();
 
         List<InterviewQuestionBO> questions = reqDTO.getQuestions().stream().map(q -> {
             InterviewQuestionBO bo = new InterviewQuestionBO();
@@ -138,19 +159,18 @@ public class InterviewController {
     }
 
     @GetMapping("/history")
+    @Operation(summary = "获取面试历史", description = "获取用户的面试历史记录")
     public Result<List<InterviewHistoryDTO>> getHistory(
-            @RequestParam(required = false) Long userId,
-            @RequestParam(defaultValue = "1") int pageNo,
-            @RequestParam(defaultValue = "10") int pageSize) {
-        userId = LoginUserContext.getLoginUserIdOrDefault(userId);
-        if (userId == null) {
-            throw new BusinessException(ResultCodeEnum.UNAUTHORIZED, "未获取到登录用户信息");
-        }
+            @Parameter(description = "用户ID") @RequestParam(required = false) Long userId,
+            @Parameter(description = "页码") @RequestParam(defaultValue = "1") int pageNo,
+            @Parameter(description = "每页数量") @RequestParam(defaultValue = "10") int pageSize) {
+        userId = userId != null ? userId : LoginUserContext.requireLoginUserId();
         return Result.success(toHistoryDTOList(interviewDomainService.getHistory(userId, pageNo, pageSize)));
     }
 
     @GetMapping("/detail")
-    public Result<List<InterviewDetailDTO>> getDetail(@RequestParam Long id) {
+    @Operation(summary = "获取面试详情", description = "获取面试的详细评估信息")
+    public Result<List<InterviewDetailDTO>> getDetail(@Parameter(description = "面试ID") @RequestParam Long id) {
         return Result.success(toDetailDTOList(interviewDomainService.getDetail(id)));
     }
 

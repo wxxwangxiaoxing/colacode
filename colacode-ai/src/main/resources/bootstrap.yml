@@ -1,17 +1,31 @@
+# 服务端口
 server:
   port: 3020
 
 spring:
+  # 应用名称
   application:
     name: colacode-ai
+  # Spring Cloud配置
   cloud:
+    # Nacos服务发现配置
     nacos:
       discovery:
-        server-addr: ${NACOS_SERVER_ADDR:${SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR:127.0.0.1:8848}}
+        # 服务发现地址，支持环境变量覆盖
+        server-addr: ${NACOS_SERVER_ADDR:${SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR:43.136.96.246:8848}}
+        # 命名空间，支持环境变量覆盖
         namespace: ${NACOS_NAMESPACE:${SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE:dev}}
+        # 服务分组，支持环境变量覆盖
         group: ${NACOS_GROUP:${SPRING_CLOUD_NACOS_DISCOVERY_GROUP:DEFAULT_GROUP}}
+      # Nacos配置中心配置
       config:
-        server-addr: ${NACOS_SERVER_ADDR:${SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR:127.0.0.1:8848}}
+        # 是否启用配置中心（本地开发时关闭）
+        enabled: false
+        # 配置中心地址，支持环境变量覆盖
+        server-addr: ${NACOS_SERVER_ADDR:${SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR:43.136.96.246:8848}}
+        # 命名空间，支持环境变量覆盖
         namespace: ${NACOS_NAMESPACE:${SPRING_CLOUD_NACOS_CONFIG_NAMESPACE:dev}}
+        # 配置分组，支持环境变量覆盖
         group: ${NACOS_GROUP:${SPRING_CLOUD_NACOS_CONFIG_GROUP:DEFAULT_GROUP}}
+        # 配置文件扩展名
         file-extension: yaml

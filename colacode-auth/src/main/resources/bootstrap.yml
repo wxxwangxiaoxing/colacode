@@ -1,3 +1,5 @@
+# Bootstrap配置文件，用于配置应用启动时的行为
+# 服务端口
 server:
   port: 3011
 
@@ -6,19 +8,29 @@ spring:
     name: colacode-auth
   cloud:
     nacos:
+      # 服务发现配置
       discovery:
+        # Nacos服务器地址，支持环境变量覆盖
         server-addr: ${NACOS_SERVER_ADDR:${SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR:127.0.0.1:8848}}
+        # 命名空间，支持环境变量覆盖
         namespace: ${NACOS_NAMESPACE:${SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE:dev}}
+        # 分组，支持环境变量覆盖
         group: ${NACOS_GROUP:${SPRING_CLOUD_NACOS_DISCOVERY_GROUP:DEFAULT_GROUP}}
+      # 配置中心配置
       config:
         server-addr: ${NACOS_SERVER_ADDR:${SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR:127.0.0.1:8848}}
         namespace: ${NACOS_NAMESPACE:${SPRING_CLOUD_NACOS_CONFIG_NAMESPACE:dev}}
         group: ${NACOS_GROUP:${SPRING_CLOUD_NACOS_CONFIG_GROUP:DEFAULT_GROUP}}
+        # 配置文件格式
         file-extension: yaml
+        # 共享配置列表
         shared-configs:
+          # 数据源共享配置
           - data-id: common-datasource.yaml
             group: ${NACOS_GROUP:${SPRING_CLOUD_NACOS_CONFIG_GROUP:DEFAULT_GROUP}}
+            # 是否支持动态刷新
             refresh: true
+          # Redis共享配置
           - data-id: common-redis.yaml
             group: ${NACOS_GROUP:${SPRING_CLOUD_NACOS_CONFIG_GROUP:DEFAULT_GROUP}}
             refresh: true

@@ -1,4 +1,6 @@
+# 本地开发环境配置
 server:
+  # 服务端口，支持环境变量覆盖
   port: ${BOOT3_SERVER_PORT:3111}
 
 spring:
@@ -6,34 +8,54 @@ spring:
     name: colacode-auth-boot3
   cloud:
     nacos:
+      # 配置中心配置
       config:
         import-check:
           enabled: false
+      # 服务发现，本地环境关闭
       discovery:
         enabled: false
+    # 兼容性验证，本地环境关闭
     compatibility-verifier:
       enabled: false
+  # 数据源配置，使用本地MySQL
   datasource:
+    # 数据库连接URL，支持环境变量覆盖
     url: ${BOOT3_DB_URL:jdbc:mysql://127.0.0.1:3306/colacode?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false}
+    # 数据库用户名，支持环境变量覆盖
     username: ${BOOT3_DB_USERNAME:root}
+    # 数据库密码，支持环境变量覆盖
     password: ${BOOT3_DB_PASSWORD:123456}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
+# MyBatis-Plus配置
 mybatis-plus:
+  # Mapper文件路径
   mapper-locations: classpath*:mapper/*.xml
   configuration:
+    # 下划线驼峰自动转换
     map-underscore-to-camel-case: true
+    # SQL日志输出实现
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
   global-config:
     db-config:
+      # ID自动递增
       id-type: auto
 
+# Sa-Token配置
 sa-token:
+  # Token名称
   token-name: satoken
+  # Token有效期（秒），默认30天
   timeout: 2592000
+  # 活跃有效期（秒），-1表示不限
   active-timeout: -1
+  # 是否允许并发登录
   is-concurrent: true
+  # 是否共享Token
   is-share: true
+  # Token风格
   token-style: uuid
+  # 是否输出日志
   is-log: true
 

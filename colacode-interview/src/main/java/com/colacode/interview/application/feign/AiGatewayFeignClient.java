@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 @FeignClient(
-        name = "${interview.ai.service-name:external-ai-service}",
+        name = "${interview.ai.service-name:colacode-ai}",
         url = "${interview.ai.base-url:}",
         path = "/ai/interview"
 )

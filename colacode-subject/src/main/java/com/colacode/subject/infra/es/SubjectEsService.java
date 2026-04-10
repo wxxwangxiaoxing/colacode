@@ -58,7 +58,8 @@ public class SubjectEsService {
             restHighLevelClient.index(request, RequestOptions.DEFAULT);
             log.info("ES保存题目成功, id: {}", subjectEsDTO.getId());
         } catch (IOException e) {
-            log.error("ES保存题目失败", e);
+            log.error("ES保存题目失败, id: {}", subjectEsDTO.getId(), e);
+            throw new RuntimeException("ES保存题目失败", e);
         }
     }
 
@@ -68,7 +69,8 @@ public class SubjectEsService {
             restHighLevelClient.delete(request, RequestOptions.DEFAULT);
             log.info("ES删除题目成功, id: {}", subjectId);
         } catch (IOException e) {
-            log.error("ES删除题目失败", e);
+            log.error("ES删除题目失败, id: {}", subjectId, e);
+            throw new RuntimeException("ES删除题目失败", e);
         }
     }
 

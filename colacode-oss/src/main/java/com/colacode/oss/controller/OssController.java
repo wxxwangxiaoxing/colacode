@@ -4,6 +4,9 @@ import com.colacode.common.Result;
 import com.colacode.common.enums.ResultCodeEnum;
 import com.colacode.common.exception.BusinessException;
 import com.colacode.oss.adapter.StorageAdapter;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -18,6 +21,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/oss")
+@Tag(name = "对象存储", description = "文件上传下载管理")
 public class OssController {
 
     private final List<StorageAdapter> adapterList;
@@ -38,6 +42,7 @@ public class OssController {
     }
 
     @GetMapping("/adapters")
+    @Operation(summary = "获取存储适配器", description = "获取支持的存储类型列表")
     public Result<List<String>> listAdapters() {
         List<String> types = adapterList.stream()
                 .map(StorageAdapter::adapterType)
@@ -46,7 +51,8 @@ public class OssController {
     }
 
     @PostMapping("/switch")
-    public Result<Void> switchAdapter(@RequestParam String type) {
+    @Operation(summary = "切换存储类型", description = "切换文件存储的适配器类型")
+    public Result<Void> switchAdapter(@Parameter(description = "存储类型") @RequestParam String type) {
         for (StorageAdapter adapter : adapterList) {
             if (type.equals(adapter.adapterType())) {
                 storageAdapter = adapter;
@@ -57,7 +63,8 @@ public class OssController {
     }
 
     @PostMapping("/upload")
-    public Result<Map<String, String>> upload(@RequestParam("file") MultipartFile file) {
+    @Operation(summary = "上传文件", description = "上传文件到存储服务")
+    public Result<Map<String, String>> upload(@Parameter(description = "文件") @RequestParam("file") MultipartFile file) {
         if (file.isEmpty()) {
             throw new BusinessException(ResultCodeEnum.BAD_REQUEST, "文件不能为空");
         }
@@ -72,7 +79,8 @@ public class OssController {
     }
 
     @GetMapping("/download/{fileName}")
-    public ResponseEntity<InputStreamResource> download(@PathVariable String fileName) {
+    @Operation(summary = "下载文件", description = "从存储服务下载文件")
+    public ResponseEntity<InputStreamResource> download(@Parameter(description = "文件名") @PathVariable String fileName) {
         InputStream inputStream = storageAdapter.download(fileName);
 
         return ResponseEntity.ok()
@@ -82,7 +90,8 @@ public class OssController {
     }
 
     @DeleteMapping("/delete/{fileName}")
-    public Result<Void> delete(@PathVariable String fileName) {
+    @Operation(summary = "删除文件", description = "从存储服务删除文件")
+    public Result<Void> delete(@Parameter(description = "文件名") @PathVariable String fileName) {
         storageAdapter.delete(fileName);
         return Result.success();
     }

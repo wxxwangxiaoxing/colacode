@@ -465,6 +465,7 @@ CREATE TABLE `subject_info` (
                                 `subject_type` tinyint(4) DEFAULT NULL COMMENT '题目类型：1单选 2多选 3判断 4简答',
                                 `subject_score` tinyint(4) DEFAULT NULL COMMENT '题目分数',
                                 `subject_parse` text COMMENT '题目解析',
+                                `browse_count` bigint(20) NOT NULL DEFAULT '0' COMMENT '浏览次数',
                                 `created_by` varchar(32) DEFAULT NULL COMMENT '操作人标识',
                                 `created_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
                                 `update_by` varchar(32) DEFAULT NULL COMMENT '更新人标识',

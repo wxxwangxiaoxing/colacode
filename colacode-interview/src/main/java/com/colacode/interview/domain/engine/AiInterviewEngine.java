@@ -21,6 +21,8 @@ import java.util.List;
 @Component
 public class AiInterviewEngine implements InterviewEngine {
 
+    private static final double DEFAULT_AI_SCORE = 3.0D;
+
     private final AiGatewayFeignClient aiGatewayFeignClient;
 
     public AiInterviewEngine(AiGatewayFeignClient aiGatewayFeignClient) {
@@ -53,6 +55,9 @@ public class AiInterviewEngine implements InterviewEngine {
     @Override
     public List<InterviewQuestionBO> start(List<KeywordBO> selectedKeywords) {
         log.info("AI引擎-开始面试, 关键词: {}", selectedKeywords);
+        if (!aiEnabled) {
+            log.warn("AI引擎未启用，当前将使用本地兜底题目文本");
+        }
         List<InterviewQuestionBO> questions = new ArrayList<>();
 
         List<KeywordBO> shuffled = new ArrayList<>(selectedKeywords);
@@ -69,7 +74,7 @@ public class AiInterviewEngine implements InterviewEngine {
                 String generatedQuestion = callAiGenerateQuestion(keyword.getKeyWord());
                 question.setSubjectName(generatedQuestion);
             } else {
-                question.setSubjectName("[AI未配置] 请谈谈你对 " + keyword.getKeyWord() + " 的理解");
+                question.setSubjectName(buildFallbackQuestion(keyword.getKeyWord()));
             }
             question.setSubjectAnswer("AI 参考答案...");
             questions.add(question);
@@ -80,15 +85,22 @@ public class AiInterviewEngine implements InterviewEngine {
     @Override
     public InterviewResultBO submit(List<InterviewQuestionBO> questions) {
         log.info("AI引擎-提交答案, 题目数量: {}", questions.size());
+        if (!aiEnabled) {
+            log.warn("AI引擎未启用，当前将使用默认分数兜底");
+        }
         double totalScore = 0;
+        boolean usedFallbackScore = false;
         List<String> tips = new ArrayList<>();
 
         for (InterviewQuestionBO q : questions) {
             double score;
             if (aiEnabled) {
-                score = callAiScoreAnswer(q.getSubjectName(), q.getUserAnswer());
+                AiScoreOutcome scoreOutcome = callAiScoreAnswer(q.getSubjectName(), q.getUserAnswer());
+                score = scoreOutcome.score();
+                usedFallbackScore = usedFallbackScore || scoreOutcome.fallback();
             } else {
-                score = q.getUserScore() != null ? q.getUserScore() : 3.0;
+                score = q.getUserScore() != null ? q.getUserScore() : DEFAULT_AI_SCORE;
+                usedFallbackScore = true;
             }
             q.setUserScore(score);
             totalScore += score;
@@ -100,7 +112,7 @@ public class AiInterviewEngine implements InterviewEngine {
         InterviewResultBO result = new InterviewResultBO();
         result.setAvgScore(Math.round(avgScore * 100.0) / 100.0);
         result.setTips(tips);
-        result.setAvgTips(generateOverallTips(avgScore));
+        result.setAvgTips(generateOverallTips(avgScore, usedFallbackScore));
         return result;
     }
 
@@ -114,14 +126,14 @@ public class AiInterviewEngine implements InterviewEngine {
                     && result.getData().getQuestion() != null && !result.getData().getQuestion().trim().isEmpty()) {
                 return result.getData().getQuestion();
             }
-            log.warn("AI 生成题目返回为空, keyword: {}, result: {}", keyword, result);
+            log.warn("AI 生成题目返回为空，使用兜底题目, keyword: {}, result: {}", keyword, result);
         } catch (Exception e) {
-            log.warn("调用 AI 生成题目失败, keyword: {}", keyword, e);
+            log.warn("调用 AI 生成题目失败，使用兜底题目, keyword: {}", keyword, e);
         }
-        return "请深入谈谈 " + keyword + " 的核心原理、应用场景和常见问题";
+        return buildFallbackQuestion(keyword);
     }
 
-    private double callAiScoreAnswer(String question, String userAnswer) {
+    private AiScoreOutcome callAiScoreAnswer(String question, String userAnswer) {
         try {
             AiScoreAnswerReqDTO reqDTO = new AiScoreAnswerReqDTO();
             reqDTO.setQuestion(question);
@@ -129,13 +141,13 @@ public class AiInterviewEngine implements InterviewEngine {
             reqDTO.setApiKey(apiKey);
             Result<AiScoreAnswerRespDTO> result = aiGatewayFeignClient.scoreAnswer(reqDTO);
             if (result != null && result.isSuccess() && result.getData() != null && result.getData().getScore() != null) {
-                return result.getData().getScore();
+                return new AiScoreOutcome(result.getData().getScore(), false);
             }
-            log.warn("AI 评分返回为空, result: {}", result);
+            log.warn("AI 评分返回为空，使用默认分数兜底, result: {}", result);
         } catch (Exception e) {
-            log.warn("调用 AI 评分失败", e);
+            log.warn("调用 AI 评分失败，使用默认分数兜底", e);
         }
-        return 3.0;
+        return new AiScoreOutcome(DEFAULT_AI_SCORE, true);
     }
 
     private String generateTip(InterviewQuestionBO question, double score) {
@@ -145,10 +157,24 @@ public class AiInterviewEngine implements InterviewEngine {
         return question.getKeyWord() + ": 需要加强";
     }
 
-    private String generateOverallTips(double avgScore) {
-        if (avgScore >= 4) return "整体表现优秀，基础扎实！";
-        if (avgScore >= 3) return "整体表现良好，部分知识需要巩固。";
-        if (avgScore >= 2) return "基础一般，建议系统复习。";
-        return "基础薄弱，建议从基础开始学习。";
+    private String generateOverallTips(double avgScore, boolean usedFallbackScore) {
+        String baseTips;
+        if (avgScore >= 4) {
+            baseTips = "整体表现优秀，基础扎实！";
+        } else if (avgScore >= 3) {
+            baseTips = "整体表现良好，部分知识需要巩固。";
+        } else if (avgScore >= 2) {
+            baseTips = "基础一般，建议系统复习。";
+        } else {
+            baseTips = "基础薄弱，建议从基础开始学习。";
+        }
+        return usedFallbackScore ? baseTips + "（AI评分回退，当前结果包含默认分数）" : baseTips;
+    }
+
+    private String buildFallbackQuestion(String keyword) {
+        return "请深入谈谈 " + keyword + " 的核心原理、应用场景和常见问题";
+    }
+
+    private record AiScoreOutcome(double score, boolean fallback) {
     }
 }

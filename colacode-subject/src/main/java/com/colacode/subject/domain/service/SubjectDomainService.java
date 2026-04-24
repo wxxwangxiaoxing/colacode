@@ -122,6 +122,8 @@ public class SubjectDomainService {
             bo.setMultipleList(detailBO.getMultipleList());
             bo.setJudgeBO(detailBO.getJudgeBO());
             bo.setBriefBO(detailBO.getBriefBO());
+            bo.setCodeConfig(detailBO.getCodeConfig());
+            bo.setTestCases(detailBO.getTestCases());
         }
         return bo;
     }

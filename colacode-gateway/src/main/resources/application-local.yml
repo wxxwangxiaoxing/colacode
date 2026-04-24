@@ -27,16 +27,6 @@ spring:
   main:
     web-application-type: reactive
 
-gateway:
-  routes:
-    auth: ${BOOT3_AUTH_ROUTE:http://127.0.0.1:3111}
-    subject: ${BOOT3_SUBJECT_ROUTE:http://127.0.0.1:3110}
-    practice: ${BOOT3_PRACTICE_ROUTE:http://127.0.0.1:3113}
-    circle: ${BOOT3_CIRCLE_ROUTE:http://127.0.0.1:3114}
-    interview: ${BOOT3_INTERVIEW_ROUTE:http://127.0.0.1:3016}
-    oss: ${BOOT3_OSS_ROUTE:http://127.0.0.1:4100}
-    wx: ${BOOT3_WX_ROUTE:http://127.0.0.1:3112}
-
 sa-token:
   token-name: satoken
   timeout: 2592000
@@ -66,6 +56,47 @@ springdoc:
 
 colacode:
   gateway:
+    routes:
+      definitions:
+        - id: colacode-auth
+          uri: ${BOOT3_AUTH_ROUTE:http://127.0.0.1:3111}
+          path: /auth/**
+        - id: colacode-subject
+          uri: ${BOOT3_SUBJECT_ROUTE:http://127.0.0.1:3110}
+          path: /subject/**
+        - id: colacode-practice
+          uri: ${BOOT3_PRACTICE_ROUTE:http://127.0.0.1:3113}
+          path: /practice/**
+        - id: colacode-circle
+          uri: ${BOOT3_CIRCLE_ROUTE:http://127.0.0.1:3114}
+          path: /circle/**
+        - id: colacode-interview
+          uri: ${BOOT3_INTERVIEW_ROUTE:http://127.0.0.1:3016}
+          path: /interview/**
+        - id: colacode-oss
+          uri: ${BOOT3_OSS_ROUTE:http://127.0.0.1:4100}
+          path: /oss/**
+        - id: colacode-wx
+          uri: ${BOOT3_WX_ROUTE:http://127.0.0.1:3112}
+          path: /wx/**
+        - id: colacode-auth-openapi
+          uri: ${BOOT3_AUTH_ROUTE:http://127.0.0.1:3111}
+          path: /auth/v3/api-docs
+        - id: colacode-subject-openapi
+          uri: ${BOOT3_SUBJECT_ROUTE:http://127.0.0.1:3110}
+          path: /subject/v3/api-docs
+        - id: colacode-practice-openapi
+          uri: ${BOOT3_PRACTICE_ROUTE:http://127.0.0.1:3113}
+          path: /practice/v3/api-docs
+        - id: colacode-circle-openapi
+          uri: ${BOOT3_CIRCLE_ROUTE:http://127.0.0.1:3114}
+          path: /circle/v3/api-docs
+        - id: colacode-interview-openapi
+          uri: ${BOOT3_INTERVIEW_ROUTE:http://127.0.0.1:3016}
+          path: /interview/v3/api-docs
+        - id: colacode-oss-openapi
+          uri: ${BOOT3_OSS_ROUTE:http://127.0.0.1:4100}
+          path: /oss/v3/api-docs
     auth:
       login-header-name: loginId
       exclude-paths:

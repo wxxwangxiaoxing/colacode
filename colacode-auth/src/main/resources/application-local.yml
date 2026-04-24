@@ -27,6 +27,17 @@ spring:
     # 数据库密码，支持环境变量覆盖
     password: ${BOOT3_DB_PASSWORD:123456}
     driver-class-name: com.mysql.cj.jdbc.Driver
+  data:
+    redis:
+      host: ${BOOT3_REDIS_HOST:127.0.0.1}
+      port: ${BOOT3_REDIS_PORT:6379}
+      password: ${BOOT3_REDIS_PASSWORD:}
+      database: 0
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
 
 # MyBatis-Plus配置
 mybatis-plus:

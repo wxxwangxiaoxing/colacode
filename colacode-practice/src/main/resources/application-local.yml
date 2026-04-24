@@ -18,6 +18,17 @@ spring:
     username: ${BOOT3_DB_USERNAME:root}
     password: ${BOOT3_DB_PASSWORD:123456}
     driver-class-name: com.mysql.cj.jdbc.Driver
+  data:
+    redis:
+      host: ${BOOT3_REDIS_HOST:127.0.0.1}
+      port: ${BOOT3_REDIS_PORT:6379}
+      password: ${BOOT3_REDIS_PASSWORD:}
+      database: 0
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
 
 mybatis-plus:
   mapper-locations: classpath*:mapper/*.xml
@@ -36,4 +47,25 @@ sa-token:
   is-share: true
   token-style: uuid
   is-log: true
+
+feign:
+  subject:
+    url: ${BOOT3_SUBJECT_URL:http://127.0.0.1:3110}
+  client:
+    config:
+      default:
+        connectTimeout: 5000
+        readTimeout: 10000
+
+judge:
+  base-url: ${BOOT3_JUDGE_BASE_URL:http://10.0.20.25:2358}
+  poll-interval-ms: ${BOOT3_JUDGE_POLL_INTERVAL_MS:500}
+  max-poll-count: ${BOOT3_JUDGE_MAX_POLL_COUNT:20}
+  max-code-length: ${BOOT3_JUDGE_MAX_CODE_LENGTH:65536}
+  max-submit-per-minute: ${BOOT3_JUDGE_MAX_SUBMIT_PER_MINUTE:20}
+  submit-cooldown-seconds: ${BOOT3_JUDGE_SUBMIT_COOLDOWN_SECONDS:5}
+  languages:
+    java: ${BOOT3_JUDGE_LANG_JAVA:62}
+    python: ${BOOT3_JUDGE_LANG_PYTHON:71}
+    cpp: ${BOOT3_JUDGE_LANG_CPP:54}
 

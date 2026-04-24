@@ -21,7 +21,7 @@ public class SubjectEsSyncProducer {
     private final RocketMQTemplate rocketMQTemplate;
     private final EsSyncStatusMapper esSyncStatusMapper;
 
-    public SubjectEsSyncProducer(RocketMQTemplate rocketMQTemplate, EsSyncStatusMapper esSyncStatusMapper) {
+    public SubjectEsSyncProducer(@org.springframework.beans.factory.annotation.Autowired(required = false) RocketMQTemplate rocketMQTemplate, EsSyncStatusMapper esSyncStatusMapper) {
         this.rocketMQTemplate = rocketMQTemplate;
         this.esSyncStatusMapper = esSyncStatusMapper;
     }
@@ -38,6 +38,12 @@ public class SubjectEsSyncProducer {
                     message.setTraceId(task.getTraceId());
                 }
             }
+        }
+
+        if (rocketMQTemplate == null) {
+            log.warn("RocketMQ not configured, skipping MQ message send for ES sync");
+            markTaskSendFailed(message.getTaskId(), new RuntimeException("RocketMQ not configured"));
+            return;
         }
 
         try {

@@ -35,4 +35,8 @@ public class SubjectInfoDTO implements Serializable {
     private String correctAnswer;
 
     private String briefContent;
+
+    private SubjectCodeConfigDTO codeConfig;
+
+    private List<SubjectCodeCaseDTO> testCases;
 }

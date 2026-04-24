@@ -21,3 +21,19 @@ spring:
         group: ${NACOS_GROUP:${SPRING_CLOUD_NACOS_CONFIG_GROUP:DEFAULT_GROUP}}
         import-check:
           enabled: false
+
+feign:
+  subject:
+    url: ${BOOT3_SUBJECT_URL:}
+
+judge:
+  base-url: ${BOOT3_JUDGE_BASE_URL:http://127.0.0.1:2358}
+  poll-interval-ms: ${BOOT3_JUDGE_POLL_INTERVAL_MS:500}
+  max-poll-count: ${BOOT3_JUDGE_MAX_POLL_COUNT:20}
+  max-code-length: ${BOOT3_JUDGE_MAX_CODE_LENGTH:65536}
+  max-submit-per-minute: ${BOOT3_JUDGE_MAX_SUBMIT_PER_MINUTE:20}
+  submit-cooldown-seconds: ${BOOT3_JUDGE_SUBMIT_COOLDOWN_SECONDS:5}
+  languages:
+    java: ${BOOT3_JUDGE_LANG_JAVA:62}
+    python: ${BOOT3_JUDGE_LANG_PYTHON:71}
+    cpp: ${BOOT3_JUDGE_LANG_CPP:54}

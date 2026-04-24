@@ -38,6 +38,10 @@ public class SubjectInfoBO implements Serializable {
 
     private SubjectBriefBO briefBO;
 
+    private SubjectCodeBO codeConfig;
+
+    private List<SubjectCodeCaseBO> testCases;
+
     private String createdBy;
 
     private Integer contributeCount;

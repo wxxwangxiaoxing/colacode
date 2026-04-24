@@ -4,14 +4,32 @@ server:
 spring:
   application:
     name: colacode-interview-boot3
+  cloud:
+    nacos:
+      config:
+        enabled: false
+        import-check:
+          enabled: false
+      discovery:
+        enabled: false
+    compatibility-verifier:
+      enabled: false
   datasource:
     url: ${BOOT3_DB_URL:jdbc:mysql://127.0.0.1:3306/colacode?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false}
     username: ${BOOT3_DB_USERNAME:root}
-    password: ${BOOT3_DB_PASSWORD:root}
+    password: ${BOOT3_DB_PASSWORD:123456}
     driver-class-name: com.mysql.cj.jdbc.Driver
-  cloud:
-    compatibility-verifier:
-      enabled: false
+  data:
+    redis:
+      host: ${BOOT3_REDIS_HOST:127.0.0.1}
+      port: ${BOOT3_REDIS_PORT:6379}
+      password: ${BOOT3_REDIS_PASSWORD:}
+      database: 0
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
 
 mybatis-plus:
   mapper-locations: classpath*:mapper/*.xml
@@ -33,8 +51,12 @@ sa-token:
 
 interview:
   ai:
-    enabled: ${BOOT3_AI_ENABLED:true}
+    enabled: ${BOOT3_AI_ENABLED:false}
     api-key: ${BOOT3_AI_API_KEY:}
     service-name: ${BOOT3_AI_SERVICE_NAME:colacode-ai}
     base-url: ${BOOT3_AI_BASE_URL:http://localhost:3020}
+
+feign:
+  ai:
+    url: ${BOOT3_AI_URL:http://127.0.0.1:3020}
 

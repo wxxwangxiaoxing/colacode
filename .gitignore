@@ -2,3 +2,8 @@
 .claude/
 .ssh/
 **/target/
+node_modules/
+dist/
+dist-ssr/
+.vite/
+.cache/

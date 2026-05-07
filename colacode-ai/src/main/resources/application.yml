@@ -1,64 +1,37 @@
-# 服务端口
 server:
   port: 3020
 
 spring:
-  # 应用名称
   application:
     name: colacode-ai
-  # Spring Cloud配置
   cloud:
-    # Nacos服务发现配置
     nacos:
       discovery:
-        # 服务发现地址，支持环境变量覆盖
         server-addr: ${NACOS_SERVER_ADDR:${SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR:10.0.20.25:8848}}
-        # 命名空间，支持环境变量覆盖
         namespace: ${NACOS_NAMESPACE:${SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE:dev}}
-        # 服务分组，支持环境变量覆盖
         group: ${NACOS_GROUP:${SPRING_CLOUD_NACOS_DISCOVERY_GROUP:DEFAULT_GROUP}}
-      # Nacos配置中心配置
       config:
-        # 配置中心地址，支持环境变量覆盖
         server-addr: ${NACOS_SERVER_ADDR:${SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR:10.0.20.25:8848}}
-        # 命名空间，支持环境变量覆盖
         namespace: ${NACOS_NAMESPACE:${SPRING_CLOUD_NACOS_CONFIG_NAMESPACE:dev}}
-        # 配置分组，支持环境变量覆盖
         group: ${NACOS_GROUP:${SPRING_CLOUD_NACOS_CONFIG_GROUP:DEFAULT_GROUP}}
-        # 导入检查配置
         import-check:
           enabled: false
-  # 自动配置排除
   autoconfigure:
     exclude:
-      # 排除数据库自动配置（AI模块无需数据库）
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
-  # Spring AI配置
   ai:
-    # OpenAI模型配置
     openai:
-      # API地址（本地AI中转站）
-      base-url: http://localhost:48760
-      # API密钥
-      api-key: 79b658d81c2851bfc2d6c3a9236d49e3b808a44394e939fb4460c3810f7419b1
-      # 聊天选项配置
+      base-url: ${OPENAI_BASE_URL:http://localhost:48760}
+      api-key: ${OPENAI_API_KEY:disabled}
       chat:
         options:
-          # 使用的模型名称
-          model: gpt-5.4
+          model: ${OPENAI_MODEL:gpt-5.4}
 
-# 项目自定义配置
 colacode:
   ai:
-    # 默认使用的AI模型
-    default-model: openai
-    # OpenAI模型配置
+    default-model: ${COLACODE_AI_DEFAULT_MODEL:mock}
     openai:
-      # 是否启用
-      enabled: true
-      # API地址
-      base-url: http://localhost:48760
-      # API密钥
-      api-key: 79b658d81c2851bfc2d6c3a9236d49e3b808a44394e939fb4460c3810f7419b1
-      # 模型名称
-      model: gpt-5.4
+      enabled: ${COLACODE_AI_OPENAI_ENABLED:false}
+      base-url: ${OPENAI_BASE_URL:http://localhost:48760}
+      api-key: ${OPENAI_API_KEY:disabled}
+      model: ${OPENAI_MODEL:gpt-5.4}

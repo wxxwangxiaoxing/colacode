@@ -55,6 +55,9 @@ public class JudgeSubmissionDomainService {
         submission.setStatus(JudgeSubmissionExecutionService.STATUS_PENDING);
         submission.setPassCaseCount(0);
         submission.setTotalCaseCount(0);
+        if (judgeProperties.getAi().isEnabled()) {
+            submission.setAiStatus(JudgeAiAnalysisService.AI_STATUS_PENDING);
+        }
         practiceSubmissionMapper.insert(submission);
 
         judgeSubmissionExecutionService.processSubmissionAsync(submission.getId());

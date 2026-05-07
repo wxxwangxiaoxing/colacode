@@ -32,4 +32,15 @@ public class JudgeConfig {
         executor.initialize();
         return executor;
     }
+
+    @Bean("judgeAiTaskExecutor")
+    public Executor judgeAiTaskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setThreadNamePrefix("judge-ai-");
+        executor.setCorePoolSize(1);
+        executor.setMaxPoolSize(2);
+        executor.setQueueCapacity(50);
+        executor.initialize();
+        return executor;
+    }
 }

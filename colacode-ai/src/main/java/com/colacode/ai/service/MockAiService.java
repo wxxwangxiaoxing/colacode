@@ -1,9 +1,9 @@
 package com.colacode.ai.service;
 
+import com.colacode.ai.service.dto.JudgeAnalysisContext;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Primary;
-import org.springframework.stereotype.Service;
 
+import java.util.Locale;
 import java.util.Random;
 
 /**
@@ -13,8 +13,6 @@ import java.util.Random;
  * @author wxx
  */
 @Slf4j
-@Service
-@Primary
 public class MockAiService implements AiService {
 
     /**
@@ -67,6 +65,30 @@ public class MockAiService implements AiService {
      *
      * @return 模型名称
      */
+    @Override
+    public String analyzeJudgeSubmission(JudgeAnalysisContext context) {
+        log.info("Mock 分析判题结果, subject: {}, status: {}",
+                context.getSubjectName(), context.getStatus());
+        String status = context.getStatus() == null ? "UNKNOWN" : context.getStatus().trim().toUpperCase(Locale.ROOT);
+        return switch (status) {
+            case "AC", "ACCEPTED" ->
+                    "本次提交已通过全部测试。可继续检查代码可读性、边界条件说明和复杂度优化。";
+            case "WA", "WRONG_ANSWER" ->
+                    "结果与预期输出不一致。优先核对输入解析、输出格式以及边界值处理。";
+            case "CE", "COMPILE_ERROR" ->
+                    "代码未通过编译。先根据编译错误定位语法、类型或缺失导入问题。";
+            case "RE", "RUNTIME_ERROR" ->
+                    "程序运行时异常。重点检查空指针、数组越界、除零和未处理输入。";
+            case "TLE", "TIME_LIMIT", "TIME_LIMIT_EXCEEDED" ->
+                    "程序超时。需要检查算法复杂度、循环边界和重复计算。";
+            case "PENDING", "RUNNING" ->
+                    "提交仍在判题中，请稍后刷新结果。";
+            case "SYSTEM_ERROR", "SE" ->
+                    "判题过程中出现系统错误。先确认代码和输入正常，再检查判题服务状态。";
+            default -> "请结合判题状态、失败用例和错误输出继续排查，优先复现失败场景。";
+        };
+    }
+
     @Override
     public String getModelName() {
         return "MOCK";

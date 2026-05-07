@@ -1,5 +1,7 @@
 package com.colacode.ai.service;
 
+import com.colacode.ai.service.dto.JudgeAnalysisContext;
+
 /**
  * AI服务接口
  * 定义AI能力的基本方法
@@ -24,6 +26,8 @@ public interface AiService {
      * @return 评分结果
      */
     double scoreAnswer(String question, String userAnswer);
+
+    String analyzeJudgeSubmission(JudgeAnalysisContext context);
 
     /**
      * 获取当前使用的模型名称

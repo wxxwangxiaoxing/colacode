@@ -50,6 +50,11 @@ set BOOT3_ROCKETMQ_NAMESERVER=127.0.0.1:9876
 # AI 服务（可选）
 set BOOT3_AI_ENABLED=false
 set BOOT3_AI_BASE_URL=http://localhost:3020
+set BOOT3_AI_URL=http://127.0.0.1:3020
+
+# 判题 AI 分析（可选）
+set BOOT3_JUDGE_AI_ENABLED=false
+set BOOT3_JUDGE_AI_INCLUDE_ACCEPTED=false
 ```
 
 ## 快速开始
@@ -92,7 +97,7 @@ mvn -pl colacode-oss spring-boot:run -Dspring-boot.run.profiles=local
 # 7. 微信服务（可选）
 mvn -pl colacode-wx spring-boot:run -Dspring-boot.run.profiles=local
 
-# 8. AI 服务（可选，需配置 API Key）
+# 8. AI 服务（可选，默认 mock 模式可直接启动）
 mvn -pl colacode-ai spring-boot:run -Dspring-boot.run.profiles=local
 
 # 9. 网关（最后启动）
@@ -133,14 +138,20 @@ mvn -pl colacode-gateway spring-boot:run -Dspring-boot.run.profiles=local
 ### Q2: 如何启用 AI 面试？
 
 1. 启动 `colacode-ai` 服务
-2. 配置有效的 API Key（`BOOT3_AI_API_KEY`）
+2. 如需真实模型，配置有效的 `OPENAI_API_KEY`
 3. 启动 interview 时设置 `BOOT3_AI_ENABLED=true`
 
-### Q3: 如何切换为 Nacos 模式？
+### Q3: 如何启用判题后的 AI 分析？
+
+1. 启动 `colacode-ai` 服务
+2. 启动 practice 时设置 `BOOT3_JUDGE_AI_ENABLED=true`
+3. 确认 `BOOT3_AI_URL` 指向 `http://127.0.0.1:3020`
+
+### Q4: 如何切换为 Nacos 模式？
 
 去掉 `-Dspring-boot.run.profiles=local` 参数，或显式指定 `-Dspring-boot.run.profiles=default`，服务将使用 `bootstrap.yml` 中的 Nacos 配置。
 
-### Q4: 某个服务启动报错 "Connection refused"？
+### Q5: 某个服务启动报错 "Connection refused"？
 
 检查该服务依赖的其他服务是否已启动。例如：
 - `practice` 依赖 `subject`

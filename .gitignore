@@ -7,3 +7,5 @@ dist/
 dist-ssr/
 .vite/
 .cache/
+.m2repo/
+m2repo/

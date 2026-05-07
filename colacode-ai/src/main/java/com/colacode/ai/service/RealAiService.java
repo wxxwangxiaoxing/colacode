@@ -1,138 +1,113 @@
 package com.colacode.ai.service;
 
 import com.colacode.ai.config.AiProperties;
+import com.colacode.ai.service.dto.JudgeAnalysisContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
-/**
- * 真实AI服务实现
- * 调用实际的AI模型进行面试题生成和评分
- *
- * @author wxx
- */
 @Slf4j
-@Service
 public class RealAiService implements AiService {
 
-    /**
-     * ChatClient实例
-     */
     private final ChatClient chatClient;
-    /**
-     * AI配置属性
-     */
     private final AiProperties aiProperties;
 
-    /**
-     * 构造函数
-     *
-     * @param builder     ChatClient构建器
-     * @param aiProperties AI配置属性
-     */
     public RealAiService(ChatClient.Builder builder, AiProperties aiProperties) {
         this.aiProperties = aiProperties;
         this.chatClient = builder.build();
-        log.info("AI 服务初始化完成，使用模型: {}", aiProperties.getDefaultModel());
+        log.info("AI service initialized with model {}", aiProperties.getDefaultModel());
     }
 
-    /**
-     * 生成面试题
-     *
-     * @param keyword 关键词
-     * @return AI生成的面试题
-     */
     @Override
     public String generateQuestion(String keyword) {
-        String prompt = buildPrompt("generate", keyword);
+        String prompt = buildQuestionPrompt(keyword);
         String content = chatClient.prompt().user(prompt).call().content();
-        if (content == null || content.trim().isEmpty()) {
+        if (!StringUtils.hasText(content)) {
             return fallbackQuestion(keyword);
         }
         return content.trim();
     }
 
-    /**
-     * 对用户答案进行评分
-     *
-     * @param question   面试题
-     * @param userAnswer 用户答案
-     * @return 评分结果（1.0-5.0）
-     */
     @Override
     public double scoreAnswer(String question, String userAnswer) {
-        String answer = userAnswer == null ? "" : userAnswer;
-        String prompt = buildScorePrompt(question, answer);
+        String prompt = buildScorePrompt(question, userAnswer == null ? "" : userAnswer);
         String content = chatClient.prompt().user(prompt).call().content();
         return parseScore(content);
     }
 
-    /**
-     * 获取当前使用的模型名称
-     *
-     * @return 模型名称
-     */
     @Override
-    public String getModelName() {
-        AiProperties.ModelConfig modelConfig = aiProperties.getActiveModel(aiProperties.getDefaultModel());
-        return modelConfig.getModel();
+    public String analyzeJudgeSubmission(JudgeAnalysisContext context) {
+        String prompt = buildJudgeAnalysisPrompt(context);
+        String content = chatClient.prompt().user(prompt).call().content();
+        if (!StringUtils.hasText(content)) {
+            return fallbackJudgeAnalysis(context);
+        }
+        return content.trim();
     }
 
-    /**
-     * 检查AI服务是否可用
-     *
-     * @return 是否可用
-     */
+    @Override
+    public String getModelName() {
+        return aiProperties.getOpenai().getModel();
+    }
+
     @Override
     public boolean isAvailable() {
         return chatClient != null;
     }
 
-    /**
-     * 构建生成面试题的Prompt
-     *
-     * @param type    Prompt类型
-     * @param keyword 关键词
-     * @return 格式化后的Prompt
-     */
-    private String buildPrompt(String type, String keyword) {
-        return switch (type) {
-            case "generate" -> "你是资深技术面试官。基于关键词生成一道中文面试题。"
-                    + "要求: 只返回题目本身，不要解释。关键词: " + keyword;
-            default -> "";
-        };
+    private String buildQuestionPrompt(String keyword) {
+        return "你是资深技术面试官。请基于关键词生成一道中文面试题，只返回题目本身，不要解释。关键词: " + keyword;
     }
 
-    /**
-     * 构建评分Prompt
-     *
-     * @param question 面试题
-     * @param answer   用户答案
-     * @return 格式化后的Prompt
-     */
     private String buildScorePrompt(String question, String answer) {
-        return "你是技术面试评分助手。对候选人回答按 1.0 到 5.0 评分，只返回数字。"
-                + "题目: " + question + " 回答: " + answer;
+        return "你是技术面试评分助手。请对候选人的回答按 1.0 到 5.0 打分，只返回数字。题目: "
+                + question + " 回答: " + answer;
     }
 
-    /**
-     * 生成备用面试题
-     *
-     * @param keyword 关键词
-     * @return 备用面试题
-     */
+    private String buildJudgeAnalysisPrompt(JudgeAnalysisContext context) {
+        return """
+                你是在线判题系统的代码分析助手。请基于下面的提交结果，用中文给出简洁、可执行的诊断结论。
+                输出要求：
+                1. 先说明最可能的问题原因。
+                2. 再给出 2-4 条具体修复建议。
+                3. 如能判断，补充需要重点验证的边界场景。
+                4. 不要输出无关寒暄，不要重复题面，不要给出完整标准答案。
+
+                题目：%s
+                语言：%s
+                判题状态：%s
+                判题摘要：%s
+                失败用例摘要：%s
+                标准输入示例：%s
+                标准输出示例：%s
+                stdout 摘要：%s
+                stderr 摘要：%s
+                用户代码：
+                %s
+                """.formatted(
+                defaultText(context.getSubjectName(), "未知题目"),
+                defaultText(context.getLanguage(), "未知语言"),
+                defaultText(context.getStatus(), "UNKNOWN"),
+                defaultText(context.getJudgeMessage(), "无"),
+                defaultText(context.getFailedCaseSummary(), "无"),
+                defaultText(context.getInputExample(), "无"),
+                defaultText(context.getOutputExample(), "无"),
+                defaultText(context.getStdoutPreview(), "无"),
+                defaultText(context.getStderrPreview(), "无"),
+                defaultText(context.getCode(), ""));
+    }
+
     private String fallbackQuestion(String keyword) {
-        return "请深入谈谈 " + keyword + " 的核心原理、应用场景和常见问题";
+        return "请深入谈谈 " + keyword + " 的核心原理、应用场景和常见问题。";
     }
 
-    /**
-     * 解析评分结果
-     *
-     * @param raw 原始评分字符串
-     * @return 标准化评分（1.0-5.0）
-     */
+    private String fallbackJudgeAnalysis(JudgeAnalysisContext context) {
+        return "判题状态为 %s。建议先结合失败用例、错误输出和边界输入复现问题，再逐项排查。"
+                .formatted(defaultText(context.getStatus(), "UNKNOWN"));
+    }
+
     private double parseScore(String raw) {
-        if (raw == null) {
+        if (!StringUtils.hasText(raw)) {
             return 3.0;
         }
         String cleaned = raw.trim().replaceAll("[^0-9.]", "");
@@ -148,8 +123,12 @@ public class RealAiService implements AiService {
                 return 5.0;
             }
             return value;
-        } catch (NumberFormatException e) {
+        } catch (NumberFormatException ignored) {
             return 3.0;
         }
+    }
+
+    private String defaultText(String value, String defaultValue) {
+        return StringUtils.hasText(value) ? value : defaultValue;
     }
 }

@@ -1,14 +1,12 @@
 package com.colacode.practice.config;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-@Setter
-@Getter
+@Data
 @ConfigurationProperties(prefix = "judge")
 public class JudgeProperties {
 
@@ -25,4 +23,18 @@ public class JudgeProperties {
     private Integer submitCooldownSeconds = 5;
 
     private Map<String, Integer> languages = new LinkedHashMap<>();
+
+    private AiProperties ai = new AiProperties();
+
+    @Data
+    public static class AiProperties {
+
+        private boolean enabled;
+
+        private boolean includeAccepted;
+
+        private Integer maxCodeContextLength = 6000;
+
+        private Integer maxFeedbackLength = 4000;
+    }
 }

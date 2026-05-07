@@ -41,6 +41,7 @@ public class JudgeSubmissionExecutionService {
     private final CachedSubjectFeignClient cachedSubjectFeignClient;
     private final Judge0Client judge0Client;
     private final JudgeOutputComparator judgeOutputComparator;
+    private final JudgeAiAnalysisService judgeAiAnalysisService;
     private final Executor judgeCaseExecutor;
 
     public JudgeSubmissionExecutionService(PracticeSubmissionMapper practiceSubmissionMapper,
@@ -48,12 +49,14 @@ public class JudgeSubmissionExecutionService {
                                            CachedSubjectFeignClient cachedSubjectFeignClient,
                                            Judge0Client judge0Client,
                                            JudgeOutputComparator judgeOutputComparator,
+                                           JudgeAiAnalysisService judgeAiAnalysisService,
                                            Executor judgeCaseExecutor) {
         this.practiceSubmissionMapper = practiceSubmissionMapper;
         this.practiceSubmissionCaseMapper = practiceSubmissionCaseMapper;
         this.cachedSubjectFeignClient = cachedSubjectFeignClient;
         this.judge0Client = judge0Client;
         this.judgeOutputComparator = judgeOutputComparator;
+        this.judgeAiAnalysisService = judgeAiAnalysisService;
         this.judgeCaseExecutor = judgeCaseExecutor;
     }
 
@@ -181,6 +184,7 @@ public class JudgeSubmissionExecutionService {
             submission.setStdoutPreview(stdoutPreview);
             submission.setStderrPreview(stderrPreview);
             practiceSubmissionMapper.updateById(submission);
+            triggerAiAnalysis(submissionId);
 
             long duration = System.currentTimeMillis() - startTime;
             log.info("判题完成: submissionId={}, status={}, duration={}ms, cases={}",
@@ -193,6 +197,7 @@ public class JudgeSubmissionExecutionService {
             failed.setStatus(STATUS_SYSTEM_ERROR);
             failed.setJudgeMessage(e.getMessage());
             practiceSubmissionMapper.updateById(failed);
+            triggerAiAnalysis(submissionId);
         }
     }
 
@@ -239,6 +244,12 @@ public class JudgeSubmissionExecutionService {
             return null;
         }
         return value.length() > 1000 ? value.substring(0, 1000) : value;
+    }
+
+    private void triggerAiAnalysis(Long submissionId) {
+        if (judgeAiAnalysisService.isEnabled()) {
+            judgeAiAnalysisService.analyzeSubmissionAsync(submissionId);
+        }
     }
 
     private record CaseResult(SubjectCodeCaseDTO testCase, Judge0ExecutionResult judgeResult, String caseStatus) {
